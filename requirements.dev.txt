@@ -1,1 +1,13 @@
 sphinx
+numpy
+sklearn
+scikit-learn
+matplotlib
+tensorflow
+seaborn
+pydot
+graphviz
+pylint
+pandas
+scipy
+pytest
