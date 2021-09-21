@@ -18,26 +18,74 @@ def read_yaml(dir):
         return data
 
 
-def load_data(data_path):
-    """Loads the ODIR dataset.
+def load_data(data_path="/Data"):
+    """
+    Loads the ODIR dataset.
+
     Parameters
     ----------
-    data_path : str
-        Path of the folder where the datasets exist.
+    data_path : str, optional
+        Direct Path to Input data folder, by default "/Data"
+        You must save these 6 file in this folder:
+        - training_images.npy
+        - training_labels.npy
+        - validation_images.npy
+        - validation_labels.npy
+        - test_images.npy
+        - test_labels.npy
+
     Returns
     -------
-    (x_train, y_train), (x_val, y_val), (x_test, y_test) : tuple of Numpy arrays
-        Training, validation, and test images and labels as numpy arrays.
+    Train_tuple : tuple
+        this tuple includes (X_train, y_train)
+    Validation_tuple : tuple
+        this tuple includes (X_val, y_val)
+    Test_tuple : tuple
+        this tuple includes (X_test, y_test)
     """
-    x_train = np.load(os.path.join(data_path, r"training_images.npy"))
-    y_train = np.load(os.path.join(data_path, r"training_labels.npy"))
+    assert os.path.exists(
+        os.path.join(data_path, "training_images.npy")
+    ), "train_image Path doesn't exist"
+    assert os.path.exists(
+        os.path.join(data_path, "training_labels.npy")
+    ), "train_label Path doesn't exist"
+    assert os.path.exists(
+        os.path.join(data_path, "validation_images.npy")
+    ), "validation_image Path doesn't exist"
+    assert os.path.exists(
+        os.path.join(data_path, "validation_labels.npy")
+    ), "validation_label Path doesn't exist"
+    assert os.path.exists(
+        os.path.join(data_path, "test_images.npy")
+    ), "test_image Path doesn't exist"
+    assert os.path.exists(
+        os.path.join(data_path, "test_labels.npy")
+    ), "test_label Path doesn't exist"
 
-    x_val = np.load(os.path.join(data_path, r"validation_images.npy"))
-    y_val = np.load(os.path.join(data_path, r"validation_labels.npy"))
+    X_train = np.load(os.path.join(data_path, "training_images.npy"))
+    y_train = np.load(os.path.join(data_path, "training_labels.npy"))
 
-    x_test = np.load(os.path.join(data_path, r"test_images.npy"))
-    y_test = np.load(os.path.join(data_path, r"test_labels.npy"))
-    return (x_train, y_train), (x_val, y_val), (x_test, y_test)
+    X_val = np.load(os.path.join(data_path, "validation_images.npy"))
+    y_val = np.load(os.path.join(data_path, "validation_labels.npy"))
+
+    X_test = np.load(os.path.join(data_path, "test_images.npy"))
+    y_test = np.load(os.path.join(data_path, "test_labels.npy"))
+
+    return (X_train, y_train), (X_val, y_val), (X_test, y_test)
+
+
+def save_weights(model, save_folder):
+    """
+    This function saves the weights of the model in a (.h5) file.
+
+    Parameters
+    ----------
+    model : keras.Model
+        The model you want to save its weights.
+    save_folder : str
+        Direct path to the file you want to save your weights on.
+    """
+    model.save(save_folder)
 
 
 class Plotter:
