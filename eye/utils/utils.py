@@ -8,6 +8,14 @@ import seaborn as sns
 import matplotlib as mpl
 import numpy as np
 import os
+import yaml
+
+
+def read_yaml(dir):
+    with open(dir) as f:
+
+        data = yaml.load(f, Loader=yaml.FullLoader)
+        return data
 
 
 def load_data(data_path):
