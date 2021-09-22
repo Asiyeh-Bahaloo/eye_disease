@@ -20,7 +20,13 @@ class xceptionModel:
             it is the primary model architecture that we want to  customize it , by default xception.Xception
         """
         self.num_classes = num_classes
-        self.base_model = xception.Xception
+        self.base_model = xception.Xception(weights=None, include_top=False)
+        temp = self.base_model
+        self.base_model = self.base_model.output
+        self.base_model = GlobalAveragePooling2D()(self.base_model)
+        self.base_model = Dense(1024, activation="relu")(self.base_model)
+        prediction = Dense(self.num_classes, activation="sigmoid")(self.base_model)
+        self.base_model = Model(inputs=temp.input, outputs=prediction)
 
     def load_xception_weight(self, url):
         """load_weight function used for loading pretrained weight
@@ -35,7 +41,7 @@ class xceptionModel:
 
         self.base_model.load_weights(url)
 
-    def load_imagenet_weights(self, url):
+    def load_imagenet_weights(self):
         """load_imagenet_weights function used for loading pretrained weight of task imagenet
 
         Here we only load the weights of the convolutional part
@@ -45,33 +51,10 @@ class xceptionModel:
         url : str
             it is the address of pretrained weights that we use
         """
-        self.base_model = self.base_model(include_top=False)
-        self.base_model.load_weights(url)
-
-    def costomizeModel(self, act_func1="relu", num_layer1=1024, act_func2="sigmoid"):
-        """costomizeModel this function costomize xception model according to the classify task
-
-        in this function by add some layer with desired node and activation function you can costomize xception model
-
-        Parameters
-        ----------
-        act_func1 : str, optional
-            it indicates the activation function of the first layer after xception model , by default 'relu'
-        num_layer1 : int, optional
-           the number of nodes in the first layer after xception model, by default 1024
-        act_func2 : str, optional
-             it indicates the activation function of the second layer after xception model, by default 'sigmoid'
-
-        Returns
-        -------
-        model object
-            it is the customized xception model  but not compiled and trained
-        """
-
-        x = self.base_model.output
-        x = GlobalAveragePooling2D()(x)
-        x = Dense(num_layer1, activation=act_func1)(x)
-        prediction = Dense(self.num_classes, activation=act_func2)(x)
-        self.base_model = Model(inputs=self.base_model.input, outputs=prediction)
-
-        return self.base_model
+        self.base_model = xception.Xception(weights="imagenet", include_top=False)
+        temp = self.base_model
+        self.base_model = self.base_model.output
+        self.base_model = GlobalAveragePooling2D()(self.base_model)
+        self.base_model = Dense(1024, activation="relu")(self.base_model)
+        prediction = Dense(self.num_classes, activation="sigmoid")(self.base_model)
+        self.base_model = Model(inputs=temp.input, outputs=prediction)

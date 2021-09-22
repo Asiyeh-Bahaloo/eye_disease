@@ -99,8 +99,9 @@ x_test = xception.preprocess_input(x_test)
 
 
 new_model = Xception_model.xceptionModel(num_classes=args.num_classes)
-new_model.load_imagenet_weights(args.weight_url)
-model = new_model.costomizeModel()
+new_model.load_xception_weight(args.weight_url)
+model = new_model.base_model
+
 
 sgd = SGD(
     lr=args.learning_rate,
