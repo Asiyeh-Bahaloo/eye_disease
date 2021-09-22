@@ -1,41 +1,94 @@
-import csv
-import os
-
-import numpy as np
 from sklearn import metrics
 
 
-class FinalScore:
-    def __init__(self, new_folder):
-        self.new_folder = new_folder
+def kappa_score(gt, pred, threshold=0.5):
+    """
+    returns kappa score based on the grounf trouth and predictions.
 
-    def odir_metrics(self, gt_data, pr_data):
-        th = 0.5
-        gt = gt_data.flatten()
-        pr = pr_data.flatten()
-        kappa = metrics.cohen_kappa_score(gt, pr > th)
-        f1 = metrics.f1_score(gt, pr > th, average="micro")
-        auc = metrics.roc_auc_score(gt, pr)
-        final_score = (kappa + f1 + auc) / 3.0
-        return kappa, f1, auc, final_score
+    Parameters
+    ----------
+    gt : numpy.ndarray
+        ground trouth vector having shape (m,8)
+    pred : numpy.ndarray
+        prediction vector having shape (m,8)
+    threshold : float, optional
+        threshold used to evaluate prediction outputs, by default 0.5
 
-    def import_data(self, filepath):
-        with open(filepath, "r") as f:
-            reader = csv.reader(f)
-            header = next(reader)
-            pr_data = [[int(row[0])] + list(map(float, row[1:])) for row in reader]
-        pr_data = np.array(pr_data)
-        return pr_data
+    Returns
+    -------
+    float
+        calculated kappa score
+    """
+    gt_flat = gt.flatten()
+    pred_flat = pred.flatten()
+    return metrics.cohen_kappa_score(gt_flat, pred_flat > threshold)
 
-    def output(self):
-        gt_data = self.import_data(
-            os.path.join(self.new_folder, "odir_ground_truth.csv")
-        )
-        pr_data = self.import_data(
-            os.path.join(self.new_folder, "odir_predictions.csv")
-        )
-        kappa, f1, auc, final_score = self.odir_metrics(gt_data[:, 1:], pr_data[:, 1:])
-        print("Kappa score:", kappa)
-        print("F-1 score:", f1)
-        print("AUC value:", auc)
-        print("Final Score:", final_score)
+
+def f1_score(gt, pred, threshold=0.5):
+    """
+    returns f1 score based on the grounf trouth and predictions.
+
+    Parameters
+    ----------
+    gt : numpy.ndarray
+        ground trouth vector having shape (m,8)
+    pred : numpy.ndarray
+        prediction vector having shape (m,8)
+    threshold : float, optional
+        threshold used to evaluate prediction outputs, by default 0.5
+
+    Returns
+    -------
+    float
+        calculated f1 score
+    """
+    gt_flat = gt.flatten()
+    pred_flat = pred.flatten()
+    return metrics.f1_score(gt_flat, pred_flat > threshold, average="micro")
+
+
+def auc_score(gt, pred):
+    """
+    returns AUC score based on the grounf trouth and predictions.
+
+    Parameters
+    ----------
+    gt : numpy.ndarray
+        ground trouth vector having shape (m,8)
+    pred : numpy.ndarray
+        prediction vector having shape (m,8)
+
+    Returns
+    -------
+    float
+        calculated AUC score
+    """
+    gt_flat = gt.flatten()
+    pred_flat = pred.flatten()
+    return metrics.roc_auc_score(gt_flat, pred_flat)
+
+
+def final_score(gt, pred, threshold=0.5):
+    """
+    This function return mean of the kappa, f1, AUC scores.
+
+
+    Parameters
+    ----------
+    gt : numpy.ndarray
+        ground trouth vector having shape (m,8)
+    pred : numpy.ndarray
+        prediction vector having shape (m,8)
+    threshold : float, optional
+        threshold used to evaluate prediction outputs, by default 0.5
+
+    Returns
+    -------
+    float
+        final score: mean of the kappa, f1, AUC scores.
+    """
+
+    kappa = kappa_score(gt, pred, threshold)
+    f1 = f1_score(gt, pred, threshold)
+    auc = auc_score(gt, pred)
+    return (kappa + f1 + auc) / 3.0
