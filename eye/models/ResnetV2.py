@@ -48,20 +48,24 @@ class Resnet_v2(ModelBase):
         self.model = Dense(num_classes, activation="sigmoid")(self.model)
         self.model = Model(inputs=base_model.input, outputs=self.model)
 
-    def compile(self):
+    def compile(self, loss="binary_crossentropy", lr=0.001):
         """[This functin will compile our model]
+        Parameters
+        ----------
+        loss : str
+            type of loss function for compiling the model
+        lr : float
+            learning rate for compiling the model
         Returns
         -------
         [A compiled Model]
 
         """
-        sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=False)
+        sgd = SGD(lr=lr, decay=1e-6, momentum=0.9, nesterov=False)
         print("Configuration Start -------------------------")
         print(sgd.get_config())
         print("Configuration End -------------------------")
-        self.model.compile(
-            optimizer=sgd, loss="binary_crossentropy", metrics=self.metrics
-        )
+        self.model.compile(optimizer=sgd, loss=loss, metrics=self.metrics)
 
         return self.model
 

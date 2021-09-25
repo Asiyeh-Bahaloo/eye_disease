@@ -1,7 +1,7 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
-
+from utils.utils import MlflowCallback
 
 defined_metric = [
     tf.keras.metrics.BinaryAccuracy(name="accuracy"),
@@ -13,7 +13,9 @@ defined_metric = [
 num_classes = 8
 
 
-def resnet_v2_training(x_train, y_train, x_val, y_val, model, batch_size, epochs):
+def resnet_v2_training(
+    x_train, y_train, x_val, y_val, model, batch_size, epochs, patience
+):
 
     """[A function for training resnet_v2 model]
 
@@ -37,13 +39,15 @@ def resnet_v2_training(x_train, y_train, x_val, y_val, model, batch_size, epochs
          by default 32
     epochs : int, optional
         [number of epochs], by default 5
+    patience : int, optional
+        [number of patience for early stopping], by default 5
 
     results_path :  [str]
         [The address which will saves our weights]
     """
 
-    callback = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=3, mode="min", verbose=1
+    earlyStoppingCallback = tf.keras.callbacks.EarlyStopping(
+        monitor="val_loss", patience=patience, mode="min", verbose=1
     )
 
     history = model.fit(
@@ -54,7 +58,7 @@ def resnet_v2_training(x_train, y_train, x_val, y_val, model, batch_size, epochs
         shuffle=True,
         validation_data=(x_val, y_val),
         validation_split=0.2,
-        callbacks=[callback],
+        callbacks=[earlyStoppingCallback, MlflowCallback()],
     )
 
     return history

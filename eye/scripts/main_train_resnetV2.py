@@ -11,6 +11,7 @@ from utils.ResnetV2_save_weights import save_weights
 from utils.utils import Plotter
 from models.ResnetV2 import Resnet_v2
 import tensorflow as tf
+import mlflow
 
 import argparse
 
@@ -63,6 +64,24 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-p",
+        "--patience",
+        type=int,
+        help="number of patience for early stopping",
+        required=True,
+        default=5,
+    )
+
+    parser.add_argument(
+        "-l",
+        "--loss",
+        type=str,
+        help="type of loss function",
+        required=True,
+        default="binary_crossentropy",
+    )
+
+    parser.add_argument(
         "-a",
         "--add_weights",
         type=bool,
@@ -73,8 +92,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    mlflow.start_run()
+    mlflow.set_tag("mlflow.runName", "resnetV2")
+
     BATCH_SIZE = int(args.batch_size)
     EPOCHS = int(args.epochs)
+    PATIENCE = int(args.patience)
 
     ### In initializing we have to pass image-net weights
     my_model = Resnet_v2((224, 224, 3), defined_metric, args.weight_path)
@@ -84,13 +107,33 @@ if __name__ == "__main__":
     if args.add_weights == True:
         my_model.load_image_net_weights(args.weight_path)
 
-    my_model = my_model.compile()
+    lr = 0.001
+    my_model = my_model.compile(args.loss, lr)
+
+    mlflow.log_param("Batch size", args.batch_size)
+    mlflow.log_param("Epochs", args.epochs)
+    mlflow.log_param("Patience", args.patience)
+    mlflow.log_param("Loss", args.loss)
+    mlflow.log_param("Learning rate", lr)
+    mlflow.log_param("Training data size", x_train.shape[0])
+    mlflow.log_param("Validation data size", x_val.shape[0])
+    mlflow.log_param("Testing data size", x_test.shape[0])
 
     history = resnet_v2_training(
-        x_train, y_train, x_val, y_val, my_model, BATCH_SIZE, EPOCHS
+        x_train, y_train, x_val, y_val, my_model, BATCH_SIZE, EPOCHS, PATIENCE
     )
 
-    save_weights(my_model, args.result_path)
+    print("saving weights")
+    model_file = os.path.join(args.result_path, "model_weights_resnetv2.h5")
+    my_model.save(model_file)
+    # save_weights(my_model, args.result_path)
+    mlflow.log_artifact(model_file)
+
+    tags = {"output_path": args.result_path, "model_name": "resnetV2"}
+
+    # Set a batch of tags
+    mlflow.set_tags(tags)
+
     print("plotting metrics", args.result_path)
     class_names = [
         "Normal",
@@ -104,11 +147,16 @@ if __name__ == "__main__":
     ]
 
 plotter = Plotter(class_names)
-plotter.plot_metrics(history, os.path.join(args.result_path, "plot1.png"), 2)
+metric_plot_figure = os.path.join(args.result_path, "metrics_plot.png")
+plotter.plot_metrics(history, metric_plot_figure, 2)
+mlflow.log_artifact(metric_plot_figure)
 
 print("plotting accuracy")
-plotter.plot_accuracy(history, os.path.join(args.result_path, "plot2.png"))
+accuracy_plot_figure = os.path.join(args.result_path, "accuracy_plot.png")
+plotter.plot_accuracy(history, accuracy_plot_figure)
+mlflow.log_artifact(accuracy_plot_figure)
 
+mlflow.end_run()
 
 ############ For running
-# python main_train_resnetV2.py -d /Dataset -w /Dataset/imagenet/vgg16_weights_tf_dim_ordering_tf_kernels.h5 -r /Dataset -b 2 -e 2 -a True
+# python main_train_resnetV2.py -d /Dataset -w /Dataset/imagenet/vgg16_weights_tf_dim_ordering_tf_kernels.h5 -r /Dataset -b 2 -e 2 -p 5 -l binary_crossentropy -a True
