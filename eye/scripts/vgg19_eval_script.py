@@ -8,7 +8,7 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
-from evaluation.scores import FinalScore
+from eye.utils.utils import print_metrics
 from evaluation.prediction import Prediction
 from utils.utils import load_data, Plotter
 from evaluation.vgg19_evaluation import vgg19_evaluation
@@ -58,8 +58,7 @@ prediction_writer.save()
 prediction_writer.save_all(y_test)
 
 print("printing the final score...")
-score = FinalScore(args.output)
-score.output()
+print_metrics(y_test, y_pred, threshold=0.5)
 
 class_names = [
     "Normal",

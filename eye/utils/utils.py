@@ -10,9 +10,13 @@ import numpy as np
 import os
 import mlflow
 import tensorflow as tf
-
-
 import yaml
+
+curr = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(curr)
+sys.path.append(parent)
+
+from eye.evaluation.metrics import *
 
 
 def read_yaml(dir):
@@ -90,6 +94,29 @@ def save_weights(model, save_folder):
         Direct path to the file you want to save your weights on.
     """
     model.save(save_folder)
+
+
+def print_metrics(gt, pred, threshold=0.5):
+    """
+    This function prints all the metrics we have.
+
+    Parameters
+    ----------
+    gt : numpy.ndarray
+        ground trouth vector having shape (m,8)
+    pred : numpy.ndarray
+        prediction vector having shape (m,8)
+    threshold : float, optional
+        threshold used to evaluate prediction outputs, by default 0.5
+    """
+    kappa = kappa_score(gt, pred, threshold)
+    f1 = f1_score(gt, pred, threshold)
+    auc = auc_score(gt, pred)
+    final = final_score(gt, pred, threshold)
+    print("Kappa score is: ", kappa)
+    print("f1 score is: ", f1)
+    print("auc score is: ", auc)
+    print("final score is: ", final)
 
 
 class Plotter:

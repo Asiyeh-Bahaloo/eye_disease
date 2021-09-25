@@ -12,6 +12,7 @@ sys.path.append(grand_parent)
 from eye.evaluation.VGG16_eval import evaluat_vgg16
 from eye.models.VGG16 import Vgg16
 from eye.utils.utils import Plotter, load_data
+from eye.utils.utils import print_metrics
 
 # python eye/scripts/VGG16_main_eval.py --weights=/Data/model_weights_vgg16.h5 --data=/Data --result=/Data
 def script_eval():
@@ -69,7 +70,7 @@ def script_eval():
     model.load_weights()
     model = model.compile()
 
-    evaluat_vgg16(model=model, X_test=X_test, y_test=y_test)
+    test_predictions_baseline = evaluat_vgg16(model=model, X_test=X_test)
 
     class_names = [
         "Normal",
@@ -82,22 +83,15 @@ def script_eval():
         "Others",
     ]
 
+    print_metrics(y_test, test_predictions_baseline, threshold=0.5)
+
     plotter = Plotter(class_names)
 
-    test_predictions_baseline = model.predict(X_test)
     plotter.plot_confusion_matrix_generic(
         y_test,
         test_predictions_baseline,
         os.path.join(args.result_path, "VGG16_confusionmat.png"),
     )
-
-    # # plot output results
-    # plotter.plot_output(
-    #     test_predictions_baseline,
-    #     y_test,
-    #     X_test_drawing,
-    #     os.path.join(args.result_path, "VGG16_output.png"),
-    # )
 
 
 if __name__ == "__main__":
