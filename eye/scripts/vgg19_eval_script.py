@@ -8,9 +8,8 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
-from eye.utils.utils import print_metrics
-from evaluation.prediction import Prediction
-from utils.utils import load_data, Plotter
+
+from utils.utils import load_data, save_predict_output, print_metrics, Plotter
 from evaluation.vgg19_evaluation import vgg19_evaluation
 
 # pyhton file.py data_folder_path output_folder_path model_path
@@ -53,9 +52,7 @@ model = tf.keras.models.load_model(args.model)
 y_pred = vgg19_evaluation(model, x_test)
 
 print("saveing the predictions...")
-prediction_writer = Prediction(y_pred, 10, args.output)
-prediction_writer.save()
-prediction_writer.save_all(y_test)
+save_predict_output(y_pred, os.path.join(args.output, "VGG19_prediction.csv"))
 
 print("printing the final score...")
 print_metrics(y_test, y_pred, threshold=0.5)
