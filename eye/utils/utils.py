@@ -11,6 +11,7 @@ import os
 import mlflow
 import tensorflow as tf
 import yaml
+import csv
 
 curr = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(curr)
@@ -117,6 +118,71 @@ def print_metrics(gt, pred, threshold=0.5):
     print("f1 score is: ", f1)
     print("auc score is: ", auc)
     print("final score is: ", final)
+
+
+def save_predict_output(predictions, path):
+    """
+    This function help you to save your model's prediction vector.
+    The final file would be prediction.csv located in the path given to this function.
+
+    Examples
+    --------
+    >>> y_pred = model.predict(x_test)
+    >>> save_predict_output(y_pred, path_to_result_folder/name.csv)
+
+    Parameters
+    ----------
+    predictions : numpy.ndarray
+        The model's output vector.
+    path : str
+        path to the file you want to save for predictions.
+    """
+
+    try:
+        with open(path, "w", newline="") as csv_file:
+            file_writer = csv.writer(
+                csv_file, delimiter=",", quotechar="|", quoting=csv.QUOTE_MINIMAL
+            )
+            file_writer.writerow(
+                [
+                    "ID",
+                    "Normal",
+                    "Diabetes",
+                    "Glaucoma",
+                    "Cataract",
+                    "AMD",
+                    "Hypertension",
+                    "Myopia",
+                    "Others",
+                ]
+            )
+            count = 0
+            for sub in predictions:
+                normal = sub[0]
+                diabetes = sub[1]
+                glaucoma = sub[2]
+                cataract = sub[3]
+                amd = sub[4]
+                hypertension = sub[5]
+                myopia = sub[6]
+                others = sub[7]
+                file_writer.writerow(
+                    [
+                        count,
+                        normal,
+                        diabetes,
+                        glaucoma,
+                        cataract,
+                        amd,
+                        hypertension,
+                        myopia,
+                        others,
+                    ]
+                )
+                count = count + 1
+    except:
+        msg = "couldn't open the provided path"
+        print(msg)
 
 
 class Plotter:
