@@ -9,7 +9,7 @@ grand_parent = os.path.dirname(parent)
 sys.path.append(grand_parent)
 
 
-def evaluat_vgg16(model, X_test, y_test):
+def evaluat_vgg16(model, X_test):
     """
     This function is for evaluating our VGG16 trained model using the variables passed.
 
@@ -19,13 +19,8 @@ def evaluat_vgg16(model, X_test, y_test):
         The Model we want to evaluate.
     X_test : numpy.ndarray
         Input images you want to evaluate.
-    y_test : numpy.ndarray
-        labels of the Input images you want to evaluate.
     """
 
     # display the content of the model
-    baseline_results = model.evaluate(X_test, y_test, verbose=2)
-
-    for name, value in zip(model.metrics_names, baseline_results):
-        print(name, ": ", value)
-    print()
+    test_predictions_baseline = model.predict(X_test)
+    return test_predictions_baseline

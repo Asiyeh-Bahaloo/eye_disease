@@ -6,7 +6,7 @@ curr = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(curr)
 sys.path.append(parent)
 
-from evaluation.scores import FinalScore
+from eye.utils.utils import print_metrics
 
 
 def resnet_v2_evaluate(x_test, y_test, model, result_path):
@@ -35,5 +35,4 @@ def resnet_v2_evaluate(x_test, y_test, model, result_path):
     test_predictions_baseline = model.predict(x_test)
 
     # show the final score
-    score = FinalScore(result_path)
-    score.output()
+    print_metrics(y_test, test_predictions_baseline, threshold=0.5)

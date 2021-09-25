@@ -6,9 +6,6 @@ import os, sys
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
-from evaluation.scores import FinalScore
-from evaluation.prediction import Prediction
-from utils.utils import load_data, Plotter
 import argparse
 
 
