@@ -8,6 +8,8 @@ import seaborn as sns
 import matplotlib as mpl
 import numpy as np
 import os
+import mlflow
+import tensorflow as tf
 
 
 import yaml
@@ -411,3 +413,27 @@ class Plotter:
         )
         plt.show()
         plt.close()
+
+
+class MlflowCallback(tf.keras.callbacks.Callback):
+
+    # This function will be called after each epoch.
+    def on_epoch_end(self, epoch, logs=None):
+        if not logs:
+            return
+        # Log the metrics from Keras to MLflow
+        mlflow.log_metric("loss", logs["loss"], step=epoch)
+        mlflow.log_metric("val_loss", logs["val_loss"], step=epoch)
+        mlflow.log_metric("accuracy", logs["accuracy"], step=epoch)
+        mlflow.log_metric("val_accuracy", logs["val_accuracy"], step=epoch)
+        mlflow.log_metric("precision", logs["precision"], step=epoch)
+        mlflow.log_metric("val_precision", logs["val_precision"], step=epoch)
+        mlflow.log_metric("recall", logs["recall"], step=epoch)
+        mlflow.log_metric("val_recall", logs["val_recall"], step=epoch)
+        mlflow.log_metric("auc", logs["auc"], step=epoch)
+        mlflow.log_metric("val_auc", logs["val_auc"], step=epoch)
+
+    # This function will be called after training completes.
+    def on_train_end(self, logs=None):
+        mlflow.log_param("num_layers", len(self.model.layers))
+        mlflow.log_param("optimizer_name", type(self.model.optimizer).__name__)

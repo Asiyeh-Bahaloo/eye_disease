@@ -7,6 +7,7 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 import argparse
+from utils.utils import MlflowCallback
 
 
 def vgg19_train(
@@ -39,7 +40,7 @@ def vgg19_train(
     history : dict
         The history of the training.
     """
-    callback = tf.keras.callbacks.EarlyStopping(
+    EarlyStoppingCallback = tf.keras.callbacks.EarlyStopping(
         monitor="val_loss", patience=patience, mode="min", verbose=1
     )
 
@@ -51,7 +52,7 @@ def vgg19_train(
         batch_size=batch_size,
         shuffle=True,
         validation_data=(x_val, y_val),
-        callbacks=[callback],
+        callbacks=[EarlyStoppingCallback, MlflowCallback()],
     )
 
     return model, history

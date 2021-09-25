@@ -1,6 +1,7 @@
 import tensorflow
 from tensorflow.keras import models, layers
 from tensorflow.keras.applications import VGG19
+from tensorflow.keras.optimizers import SGD
 
 
 class Vgg19:
@@ -19,13 +20,15 @@ class Vgg19:
     -------
     get_model()
         Builds the architecture of model.
+    compile(loss, lr)
+        Compiles the model.
     load_VGG19_weights(weights_path)
         Loads prepared VGG19 weights into the raw model.
     load_ImageNet_weights(weights_path)
         Loads prepared ImageNet weights into the raw model.
     """
 
-    def __init__(self, input_shape, metrics, weights_type, weights_path=None):
+    def __init__(self, input_shape, metrics):
         """Constructs the VGG19 model.
         Parameters
         ----------
@@ -33,18 +36,11 @@ class Vgg19:
             The shape of the input images(e.g. (224, 224, 3)).
         metrics : list
             Metrics to evaluate the model based on them.
-        weights_path : str
-            If this parameter exists, it will be used to load the weights to the model.
         """
         self.input_shape = input_shape
         self.metrics = metrics
         self.model = None
         self.get_model()
-        if weights_path is not None:
-            if weights_type == "Vgg19":
-                self.load_VGG19_weights(weights_path)
-            elif weights_type == "ImageNet":
-                self.load_imagenet_weights(weights_path)
 
     def get_model(self):
         """Builds the model architecture."""
@@ -178,6 +174,21 @@ class Vgg19:
         self.model = model
         # return model
 
+    def compile(self, loss, lr):
+        """Compiles the model.
+        Parameters
+        -------
+        loss : str
+            Loss function in compiling the model.
+        lr : float
+            The learing rate of optimizer.
+        """
+        sgd = SGD(learning_rate=lr, decay=1e-6, momentum=0.9, nesterov=False)
+        print("Configuration Start -------------------------")
+        print(sgd.get_config())
+        print("Configuration End -------------------------")
+        self.model.compile(optimizer=sgd, loss=loss, metrics=self.metrics)
+
     def load_VGG19_weights(self, weights_path):
         """Loads the VGG19 weights into the model.
 
@@ -198,7 +209,6 @@ class Vgg19:
         """
         self.model.pop()
         layer = layers.Dense(1000, activation="softmax")
-        layer.trainable = False
         self.model.add(layer)
         # Transfer learning, load previous weights
         self.model.load_weights(weights_path)
