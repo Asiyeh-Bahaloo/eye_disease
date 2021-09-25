@@ -36,7 +36,7 @@ entry_points:
       data_folder: { type: str, default: "/Data" }
       result: { type: str, default: "/Data" }
 
-    command: "python vgg19_train_script.py \
+    command: "python VGG16_main_train.py \
       --batch {batch} \
       --epoch {epoch} \
       --patience {patience} \
@@ -44,3 +44,24 @@ entry_points:
       --weights {weights} \
       --data {data} \
       --result {result}"
+
+  ResnetV2:
+    parameters:
+      data_path: { type: str, default: "/Dataset" }
+      weight_path: { type: str, default: "/Dataset" }
+      result_path: { type: str, default: "/Dataset" }
+      batch_size: { type: int, default: 4 }
+      epochs: { type: int, default: 2 }
+      patience: { type: int, default: 5 }
+      loss: { type: str, default: "binary_crossentropy" }
+      add_weights: { type: bool, default: True }
+
+    command: "python main_train_resnetV2.py \
+      --data_path {data_path} \
+      --weight_path {weight_path} \
+      --result_path {result_path} \
+      --batch_size {batch_size} \
+      --epochs {epochs} \
+      --patience {patience} \
+      --loss {loss} \
+      --add_weights {add_weights}"

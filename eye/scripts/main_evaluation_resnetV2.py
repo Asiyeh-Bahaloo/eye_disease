@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # my_model.load_weightss(args.weight_path)
 
     # my_model.costomizeModel()
-    my_model = my_model.compile()
+    my_model = my_model.compile(loss="binary_crossentropy", lr=0.001)
 
     resnet_v2_evaluate(x_test, y_test, my_model, args.result_path)
 
