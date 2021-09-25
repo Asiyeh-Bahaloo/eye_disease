@@ -145,9 +145,16 @@ class Vgg16(ModelBase):
         # Transfer learning, load previous weights
         self.model.load_weights(self.weights_path)
 
-    def compile(self):
+    def compile(self, loss="binary_crossentropy", lr=0.001):
         """
         This function compiles our model.
+
+        Parameters
+        ----------
+        loss : str, optional
+            type of loss function for compiling the model
+        lr : float, optional
+            learning rate for compiling the model
 
         Returns
         -------
@@ -155,13 +162,11 @@ class Vgg16(ModelBase):
             The compiled model.
         """
 
-        sgd = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
+        sgd = SGD(lr=lr, decay=1e-6, momentum=0.9, nesterov=True)
         print("Configuration Start -------------------------")
         print(sgd.get_config())
         print("Configuration End -------------------------")
-        self.model.compile(
-            optimizer=sgd, loss="binary_crossentropy", metrics=self.metrics
-        )
+        self.model.compile(optimizer=sgd, loss=loss, metrics=self.metrics)
 
         self.show_summary(self.model)
         return self.model

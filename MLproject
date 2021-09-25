@@ -1,7 +1,7 @@
 name: EYE-DISEASE
 
 entry_points:
-  main:
+  VGG19:
     parameters:
       data_folder: { type: str, default: "../data" }
       weights_path: { type: str, default: "../weights/vgg19_weights.h5" }
@@ -21,3 +21,26 @@ entry_points:
       --patience {patience} \
       --loss {loss} \
       --model_name {model_name}"
+
+  VGG16:
+    parameters:
+      num_batch: { type: int, default: 2 }
+      num_epochs: { type: int, default: 2 }
+      patience: { type: int, default: 5 }
+      loss: { type: str, default: "binary_crossentropy" }
+      weights_path:
+        {
+          type: str,
+          default: "/Data/vgg16_weights_tf_dim_ordering_tf_kernels.h5",
+        }
+      data_folder: { type: str, default: "/Data" }
+      result: { type: str, default: "/Data" }
+
+    command: "python vgg19_train_script.py \
+      --batch {batch} \
+      --epoch {epoch} \
+      --patience {patience} \
+      --loss {loss} \
+      --weights {weights} \
+      --data {data} \
+      --result {result}"

@@ -13,8 +13,9 @@ from eye.models.VGG16 import Vgg16
 from eye.train.VGG16_train import train_from_file
 from eye.utils.utils import load_data, save_weights, Plotter
 from tensorflow.keras.applications import vgg16
+import mlflow
 
-# python eye/scripts/VGG16_main_train.py --batch=2 --epoch=2 --weights=/Data/vgg16_weights_tf_dim_ordering_tf_kernels.h5 --data=/Data --result=/Data
+# python eye/scripts/VGG16_main_train.py --batch=2 --epoch=2 --patience=5 --loss=binary_crossentropy --weights=/Data/vgg16_weights_tf_dim_ordering_tf_kernels.h5 --data=/Data --result=/Data
 def script_train():
     my_parser = argparse.ArgumentParser(
         description="Argumnts for training the VGG16 model"
@@ -35,7 +36,22 @@ def script_train():
         help="number of epochs you want to train your model",
         required=True,
     )
-
+    my_parser.add_argument(
+        "--patience",
+        dest="patience",
+        type=int,
+        default=5,
+        help="number of patience you want to use for early stopping",
+        required=True,
+    )
+    my_parser.add_argument(
+        "--loss",
+        dest="loss",
+        type=str,
+        default="binary_crossentropy",
+        help="type of loss function with which you want to compile your model",
+        required=True,
+    )
     my_parser.add_argument(
         "--weights",
         dest="weights_path",
@@ -65,6 +81,9 @@ def script_train():
 
     args = my_parser.parse_args()
 
+    mlflow.start_run()
+    mlflow.set_tag("mlflow.runName", "vgg16")
+
     # import data
     (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_data(args.data_folder)
 
@@ -86,8 +105,18 @@ def script_train():
         input_shape=input_shape, metrics=defined_metrics, weights_path=args.weights_path
     )
 
+    lr = 0.001
     model.image_net_load_weights()
-    model = model.compile()
+    model = model.compile(args.loss, lr)
+
+    mlflow.log_param("Batch size", args.num_batch)
+    mlflow.log_param("Epochs", args.num_epochs)
+    mlflow.log_param("Patience", args.patience)
+    mlflow.log_param("Loss", args.loss)
+    mlflow.log_param("Learning rate", lr)
+    mlflow.log_param("Training data size", X_train.shape[0])
+    mlflow.log_param("Validation data size", X_val.shape[0])
+    mlflow.log_param("Testing data size", X_test.shape[0])
 
     model, history = train_from_file(
         model=model,
@@ -97,11 +126,19 @@ def script_train():
         y_val=y_val,
         batch_size=args.num_batch,
         epochs=args.num_epochs,
+        patience=args.patience,
     )
 
     print("Saving models weights...")
-    save_weights(model, os.path.join(args.result, "model_weights_vgg16.h5"))
+    model_file = os.path.join(args.result, "model_weights_vgg16.h5")
+    save_weights(model, model_file)
+    mlflow.log_artifact(model_file)
     print("plotting...")
+
+    tags = {"output_path": args.result, "model_name": "vgg16"}
+
+    # Set a batch of tags
+    mlflow.set_tags(tags)
 
     class_names = [
         "Normal",
@@ -115,9 +152,11 @@ def script_train():
     ]
 
     plotter = Plotter(class_names)
-    plotter.plot_accuracy(
-        history=history, new_folder=os.path.join(args.result, "VGG16_accuracy.png")
-    )
+    accuracy_plot_figure = os.path.join(args.result, "VGG16_accuracy.png")
+    plotter.plot_accuracy(history=history, new_folder=accuracy_plot_figure)
+    mlflow.log_artifact(accuracy_plot_figure)
+
+    mlflow.end_run()
 
 
 if __name__ == "__main__":
