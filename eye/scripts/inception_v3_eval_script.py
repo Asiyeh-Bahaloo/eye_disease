@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.append(os.getcwd())
 
-
+from tensorflow.keras.losses import binary_crossentropy
 import eye.utils.data_loader_dataframe as data_loader
 from eye.models.Inception_V3 import Inception_V3
 import argparse as ap
