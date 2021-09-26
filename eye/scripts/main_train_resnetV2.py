@@ -8,7 +8,7 @@ sys.path.append(parent)
 from train.ResnetV2_training import resnet_v2_training
 from utils.utils import load_data
 from utils.ResnetV2_save_weights import save_weights
-from utils.utils import Plotter
+from eye.utils.plotter_utils import *
 from models.ResnetV2 import Resnet_v2
 import tensorflow as tf
 import mlflow
@@ -146,14 +146,14 @@ if __name__ == "__main__":
         "Others",
     ]
 
-plotter = Plotter(class_names)
+print("plotting metrics")
 metric_plot_figure = os.path.join(args.result_path, "metrics_plot.png")
-plotter.plot_metrics(history, metric_plot_figure, 2)
+plot_metrics(history, os.path.join(args.result_path, "metrics_plot.png"))
 mlflow.log_artifact(metric_plot_figure)
 
 print("plotting accuracy")
 accuracy_plot_figure = os.path.join(args.result_path, "accuracy_plot.png")
-plotter.plot_accuracy(history, accuracy_plot_figure)
+plot_accuracy(history, os.path.join(args.result_path, "accuracy_plot.png"))
 mlflow.log_artifact(accuracy_plot_figure)
 
 mlflow.end_run()

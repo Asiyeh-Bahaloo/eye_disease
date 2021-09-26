@@ -11,7 +11,8 @@ parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
 
-from utils import utils
+from utils.plotter_utils import *
+from utils.utils import load_data
 from models import Xception_model
 from train import train_xception_model
 from evaluation import Xception_evaluating
@@ -91,7 +92,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-(x_train, y_train), (x_val, y_val), (x_test, y_test) = utils.load_data(args.datapath)
+(x_train, y_train), (x_val, y_val), (x_test, y_test) = load_data(args.datapath)
 
 x_train = xception.preprocess_input(x_train)
 x_val = xception.preprocess_input(x_val)
@@ -154,6 +155,6 @@ class_names = [
     "Myopia",
     "Others",
 ]
-plotter = utils.Plotter(class_names)
+
 print("plotting metrics")
-plotter.plot_metrics(his, args.folder, 2)
+plot_metrics(his, args.folder)

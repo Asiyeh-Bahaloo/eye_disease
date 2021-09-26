@@ -10,8 +10,10 @@ sys.path.append(parentdir)
 from train.vgg19_train import vgg19_train
 from models.vgg19_model import Vgg19
 from tensorflow.keras.applications import vgg19
-from utils.utils import Plotter, load_data
 import mlflow
+from tensorflow.keras.optimizers import SGD
+from utils.utils import load_data
+from utils.plotter_utils import *
 
 # pyhton file.py data_folder_path weights.h5_path output_folder_path batch_size epochs patience loss
 # python eye\scripts\vgg19_train_script.py --data_path ..\data --weights_path ..\weights\vgg19_weights.h5 --output_folder eye\train\vgg19_train_outputs --batch_size 8 --epoch 3 --patience 5 --loss binary_crossentropy --model_name vgg19_model.h5
@@ -119,17 +121,15 @@ class_names = [
     "Others",
 ]
 
-# plot data input
-plotter = Plotter(class_names)
 
 print("plotting metrics")
 metric_plot_figure = os.path.join(args.output_folder, "metrics_plot.png")
-plotter.plot_metrics(history, metric_plot_figure, 2)
+plot_metrics(history, os.path.join(args.output, "metrics_plot.png"))
 mlflow.log_artifact(metric_plot_figure)
 
 print("plotting accuracy")
 accuracy_plot_figure = os.path.join(args.output_folder, "accuracy_plot.png")
-plotter.plot_accuracy(history, accuracy_plot_figure)
+plot_accuracy(history, os.path.join(args.output, "accuracy_plot.png"))
 mlflow.log_artifact(accuracy_plot_figure)
 
 mlflow.end_run()

@@ -9,7 +9,8 @@ parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 
 
-from utils.utils import load_data, save_predict_output, print_metrics, Plotter
+from utils.utils import load_data, save_predict_output, print_metrics
+from utils.plotter_utils import *
 from evaluation.vgg19_evaluation import vgg19_evaluation
 
 # pyhton file.py data_folder_path output_folder_path model_path
@@ -69,17 +70,12 @@ class_names = [
 ]
 
 # plot data input
-plotter = Plotter(class_names)
+
 
 print("plotting confusion matrix")
-plotter.plot_confusion_matrix_generic(
-    y_test, y_pred, os.path.join(args.output, "plot3.png"), 0
-)
+plot_confusion_matrix_sns(y_test, y_pred, os.path.join(args.output, "plot3.png"))
 
 print("plottig output results...")
-plotter.plot_output(
-    y_pred,
-    y_test,
-    x_test_drawing,
-    os.path.join(args.output, "plot4.png"),
+plot_output(
+    y_pred, y_test, x_test_drawing, os.path.join(args.output, "plot4.png"), class_names
 )

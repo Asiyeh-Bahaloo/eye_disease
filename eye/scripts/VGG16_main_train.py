@@ -11,7 +11,8 @@ sys.path.append(grand_parent)
 
 from eye.models.VGG16 import Vgg16
 from eye.train.VGG16_train import train_from_file
-from eye.utils.utils import load_data, save_weights, Plotter
+from eye.utils.plotter_utils import *
+from eye.utils.utils import save_weights, load_data
 from tensorflow.keras.applications import vgg16
 import mlflow
 
@@ -151,11 +152,14 @@ def script_train():
         "Others",
     ]
 
-    plotter = Plotter(class_names)
     accuracy_plot_figure = os.path.join(args.result, "VGG16_accuracy.png")
-    plotter.plot_accuracy(history=history, new_folder=accuracy_plot_figure)
-    mlflow.log_artifact(accuracy_plot_figure)
+    metrics_plot_figure = os.path.join(args.result, "VGG16_metrics.png")
 
+    plot_accuracy(history=history, path=os.path.join(args.result, "VGG16_accuracy.png"))
+    plot_metrics(history=history, path=os.path.join(args.result, "VGG16_metrics.png"))
+
+    mlflow.log_artifact(accuracy_plot_figure)
+    mlflow.log_artifact(metrics_plot_figure)
     mlflow.end_run()
 
 

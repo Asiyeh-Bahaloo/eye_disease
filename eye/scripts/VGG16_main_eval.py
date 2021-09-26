@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications import vgg16
 
@@ -11,8 +12,8 @@ sys.path.append(grand_parent)
 
 from eye.evaluation.VGG16_eval import evaluat_vgg16
 from eye.models.VGG16 import Vgg16
-from eye.utils.utils import Plotter, load_data
-from eye.utils.utils import print_metrics
+from eye.utils.utils import print_metrics, load_data
+from utils.plotter_utils import *
 
 # python eye/scripts/VGG16_main_eval.py --weights=/Data/model_weights_vgg16.h5 --data=/Data --result=/Data
 def script_eval():
@@ -85,9 +86,9 @@ def script_eval():
 
     print_metrics(y_test, test_predictions_baseline, threshold=0.5)
 
-    plotter = Plotter(class_names)
+    test_predictions_baseline = model.predict(X_test)
 
-    plotter.plot_confusion_matrix_generic(
+    plot_confusion_matrix_sns(
         y_test,
         test_predictions_baseline,
         os.path.join(args.result_path, "VGG16_confusionmat.png"),
