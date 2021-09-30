@@ -8,29 +8,29 @@ class Vgg16(KerasClsBaseModel):
 
     Parameters
     ----------
-    num_class : int
+    num_classes : int
         number of classes of the classification task
     """
 
-    def __init__(self, num_class, input_shape):
+    def __init__(self, num_classes, input_shape):
         """__init__ set number of classes and builds model architecture
 
         Parameters
         ----------
-        num_class : int
+        num_classes : int
             number of classes that model should detect
         """
-        # super().__init__(num_class)
-        self.num_class = num_class
+        # super().__init__(num_classes)
+        self.num_classes = num_classes
         self.input_shape = input_shape
-        self.model = self.build(self.num_class, self.input_shape)
+        self.model = self.build(self.num_classes, self.input_shape)
 
-    def build(self, num_class, input_shape):
+    def build(self, num_classes, input_shape):
         """builds the model architecture by default uses random weights
 
         Parameters
         ----------
-        num_class : int
+        num_classes : int
             number of classes that model should detect
 
         Returns
@@ -144,7 +144,7 @@ class Vgg16(KerasClsBaseModel):
         layer = layers.Dense(4096, activation="relu")
         layer.trainable = trainable
         model.add(layer)
-        layer = layers.Dense(8, activation="sigmoid")
+        layer = layers.Dense(num_classes, activation="sigmoid")
         model.add(layer)
 
         return model

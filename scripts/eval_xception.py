@@ -3,20 +3,19 @@ import sys
 import argparse
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.applications import vgg16
+from tensorflow.keras.applications.xception import preprocess_input  # for preprocess
 
-from eye.models.vgg16 import Vgg16
-from eye.utils.utils import print_metrics, load_data
+from eye.models.xception import Xception
+from eye.utils.utils import load_data, pprint_metrics, calc_metrics
 from eye.utils import plotter_utils as p
 
-# python eye/scripts/evalVgg16.py --weights=./Data/model_weights_vgg16.h5 --data=./Data --result=./Data
-def script_eval():
 
+def parse_arguments():
     # define arguments
-    my_parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description="Argumnts for training the VGG16 model"
     )
-    my_parser.add_argument(
+    parser.add_argument(
         "--weights",
         dest="weights_path",
         type=str,
@@ -24,7 +23,7 @@ def script_eval():
         help="Path to the model's weights file",
         required=True,
     )
-    my_parser.add_argument(
+    parser.add_argument(
         "--data",
         dest="data_folder",
         type=str,
@@ -32,7 +31,7 @@ def script_eval():
         help="Path to the model's input data folder",
         required=True,
     )
-    my_parser.add_argument(
+    parser.add_argument(
         "--result",
         dest="result_path",
         type=str,
@@ -40,7 +39,7 @@ def script_eval():
         help="Path to the folder you want to save your results",
         required=True,
     )
-    my_parser.add_argument(
+    parser.add_argument(
         "--loss",
         dest="loss",
         type=str,
@@ -49,16 +48,24 @@ def script_eval():
         required=False,
     )
 
-    args = my_parser.parse_args()
+    args = parser.parse_args()
+    return args
+
+
+# python eye/scripts/eval_xception.py --weights=./Data/model_weights_xception.h5 --data=./Data --result=./Data
+def main():
+    args = parse_arguments()
 
     # Parameters
-    input_shape = (224, 224, 3)
     num_classes = 8
+    tag = "xception"
 
     # Load data
-    (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_data(args.data_folder)
+    # TODO: use dataloaders instead
+    (_, _), (_, _), (X_test, y_test) = load_data(args.data_folder)
 
-    X_test = vgg16.preprocess_input(X_test)
+    # TODO: Move preprocess to 'data' module and call them in dataloader
+    X_test = preprocess_input(X_test)
 
     # Metrics
     defined_metrics = [
@@ -69,31 +76,36 @@ def script_eval():
     ]
 
     # Model
-    model = Vgg16(num_class=num_classes, input_shape=input_shape)
-
-    if args.weights_path is not None:
-        model.load_weights(path=args.weights_path)
+    model = Xception(num_classes=num_classes)
+    model.load_weights(path=args.weights_path)
 
     test_predictions_baseline = model.predict(X_test)
+
     baseline_results = model.evaluate(
         metrics=defined_metrics, loss=args.loss, X=X_test, Y=y_test
     )
-    print("baseline_results", baseline_results)
+    pprint_metrics(
+        {
+            name: score
+            for score, name in zip(
+                baseline_results, ["loss", "accuracy", "precision", "recall", "auc"]
+            )
+        }
+    )
 
-    print_metrics(y_test, test_predictions_baseline, threshold=0.5)
-
-    test_predictions_baseline = model.predict(X_test)
+    scores_dict = calc_metrics(y_test, test_predictions_baseline, threshold=0.5)
+    pprint_metrics(scores_dict)
 
     p.plot_confusion_matrix_sns(
         y_test,
         test_predictions_baseline,
-        os.path.join(args.result_path, "VGG16_confusionmat.png"),
+        os.path.join(args.result_path, f"{tag}_confusion_mat.png"),
     )
     print(
         "Confusion Matrix saved in ",
-        os.path.join(args.result_path, "VGG16_confusionmat.png"),
+        os.path.join(args.result_path, f"{tag}_confusion_mat.png"),
     )
 
 
 if __name__ == "__main__":
-    script_eval()
+    main()
