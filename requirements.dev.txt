@@ -3,7 +3,7 @@ numpy
 sklearn
 scikit-learn
 matplotlib
-tensorflow
+tensorflow-cpu
 seaborn
 pydot
 graphviz
@@ -12,6 +12,10 @@ pandas
 scipy
 pytest
 pyyaml
+mlflow
+streamlit
+scikit-image
+opencv-python
 
 
 

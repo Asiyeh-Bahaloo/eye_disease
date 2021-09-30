@@ -1,4 +1,5 @@
 .ssh/
+./Data
 docs/sphinx/build/
 eye/data
 tests/Container
