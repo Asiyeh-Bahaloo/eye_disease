@@ -88,9 +88,9 @@ def save_weights(model, save_folder):
     model.save(save_folder)
 
 
-def print_metrics(gt, pred, threshold=0.5):
+def calc_metrics(gt, pred, threshold=0.5):
     """
-    This function prints all the metrics we have.
+    This function calculates all the metrics we have.
 
     Parameters
     ----------
@@ -105,10 +105,20 @@ def print_metrics(gt, pred, threshold=0.5):
     f1 = f1_score(gt, pred, threshold)
     auc = auc_score(gt, pred)
     final = final_score(gt, pred, threshold)
-    print("Kappa score is: ", kappa)
-    print("f1 score is: ", f1)
-    print("auc score is: ", auc)
-    print("final score is: ", final)
+
+    return {"kappa": kappa, "f1": f1, "auc": auc, "final": final}
+
+
+def pprint_metrics(scores):
+    """pretty prints scores dictionary
+
+    Parameters
+    ----------
+    scores : dict
+        A dictionary containing scores with it's keys being score names
+    """
+    for key, value in scores.items():
+        print(f"    {key} score is : ", value)
 
 
 def save_predict_output(predictions, path):
