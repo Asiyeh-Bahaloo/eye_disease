@@ -1,11 +1,6 @@
-import os, sys
 import argparse
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
-from preprocess import crop_image
+from eye.preprocess.preprocess import crop_image
 
 
 if __name__ == "__main__":

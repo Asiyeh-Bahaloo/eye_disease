@@ -1,17 +1,13 @@
 import os
 import sys
-import tensorflow as tf
-from tensorflow.keras.applications import vgg19
 import argparse
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
+import tensorflow as tf
+from tensorflow.keras.applications import vgg19
 
-
-from utils.utils import load_data, save_predict_output, print_metrics
-from utils.plotter_utils import *
-from evaluation.vgg19_evaluation import vgg19_evaluation
+from eye.utils.utils import load_data, save_predict_output, print_metrics
+from eye.utils import plotter_utils as p
+from eye.evaluation.vgg19_evaluation import vgg19_evaluation
 
 # pyhton file.py data_folder_path output_folder_path model_path
 # python eye\scripts\vgg19_eval_script.py --data ..\data --output eye\evaluation\vgg19_evaluation_outputs --model eye\train\vgg19_train_outputs\vgg19_model.h5
@@ -73,9 +69,9 @@ class_names = [
 
 
 print("plotting confusion matrix")
-plot_confusion_matrix_sns(y_test, y_pred, os.path.join(args.output, "plot3.png"))
+p.plot_confusion_matrix_sns(y_test, y_pred, os.path.join(args.output, "plot3.png"))
 
 print("plottig output results...")
-plot_output(
+p.plot_output(
     y_pred, y_test, x_test_drawing, os.path.join(args.output, "plot4.png"), class_names
 )

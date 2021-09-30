@@ -10,6 +10,8 @@ services:
           - "8888:8888"
         volumes:
           - ./:/usr/src/app
+        environment:
+          - PYTHONPATH=/usr/src/app
         working_dir: /usr/src/app
         tty: true 
         # env_file:
