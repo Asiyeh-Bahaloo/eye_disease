@@ -1,21 +1,16 @@
-import sys
 import os
+import sys
 import argparse
-from tensorflow.keras.applications import xception
-from numpy.lib.npyio import save
+
 import tensorflow as tf
+from tensorflow.keras.applications import xception
 from tensorflow.keras.optimizers import SGD
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
-
-from utils.plotter_utils import *
-from utils.utils import load_data
-from models import Xception_model
-from train import train_xception_model
-from evaluation import Xception_evaluating
+from eye.models import Xception_model
+from eye.train import train_xception_model
+from eye.evaluation import Xception_evaluating
+from eye.utils.utils import load_data
+from eye.utils import plotter_utils as p
 
 
 parser = argparse.ArgumentParser(
@@ -137,12 +132,12 @@ trained_model, his = train_xception_model.training_model(
 
 # model.save(args.model_path)
 
-t, p = Xception_evaluating.predict_xception_model(
+t, pred = Xception_evaluating.predict_xception_model(
     x_test=x_test, y_test=y_test, model=trained_model
 )
 
 print(t)
-print(p)
+print(pred)
 
 
 class_names = [
@@ -157,4 +152,4 @@ class_names = [
 ]
 
 print("plotting metrics")
-plot_metrics(his, args.folder)
+p.plot_metrics(his, args.folder)

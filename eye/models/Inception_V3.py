@@ -1,4 +1,3 @@
-
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 from tensorflow.python.keras.applications.inception_v3 import InceptionV3
@@ -39,7 +38,6 @@ class Inception_V3:
         """
 
         self.base_model.load_weights(path)
-
 
     def load_imagenet_weights(self):
         """load_imagenet_weights function used for loading pretrained weight of task imagenet

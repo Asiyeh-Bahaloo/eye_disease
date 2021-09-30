@@ -1,11 +1,3 @@
-import os, sys
-import tensorflow as tf
-
-
-curr = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(curr)
-sys.path.append(parent)
-
 from eye.utils.utils import print_metrics
 
 

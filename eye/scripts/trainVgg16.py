@@ -1,22 +1,17 @@
 import os
 import sys
-import tensorflow as tf
 import argparse
-import matplotlib.pyplot as plt
-
-curr = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(curr)
-grand_parent = os.path.dirname(parent)
-sys.path.append(grand_parent)
-
-from eye.models.VGG16 import Vgg16
-from eye.train.VGG16_train import train_from_file
-from eye.utils.plotter_utils import *
-from eye.utils.utils import save_weights, load_data
-from tensorflow.keras.applications import vgg16
 import mlflow
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.applications import vgg16  # for preprocess
 
-# python eye/scripts/VGG16_main_train.py --batch=2 --epoch=2 --patience=5 --loss=binary_crossentropy --weights=/Data/vgg16_weights_tf_dim_ordering_tf_kernels.h5 --data=/Data --result=/Data
+from eye.models.vgg16 import Vgg16
+from eye.utils import plotter_utils as p
+from eye.utils.utils import load_data, MlflowCallback
+
+# python eye/scripts/trainVgg16.py --batch=2 --epoch=2 --patience=5 --loss=binary_crossentropy --weights=./Data/model_weights_vgg16.h5 --data=./Data --result=./Data
 def script_train():
     my_parser = argparse.ArgumentParser(
         description="Argumnts for training the VGG16 model"
@@ -27,7 +22,7 @@ def script_train():
         type=int,
         default=2,
         help="number of batchs you want to have in your training process",
-        required=True,
+        required=False,
     )
     my_parser.add_argument(
         "--epoch",
@@ -35,7 +30,7 @@ def script_train():
         type=int,
         default=2,
         help="number of epochs you want to train your model",
-        required=True,
+        required=False,
     )
     my_parser.add_argument(
         "--patience",
@@ -43,7 +38,7 @@ def script_train():
         type=int,
         default=5,
         help="number of patience you want to use for early stopping",
-        required=True,
+        required=False,
     )
     my_parser.add_argument(
         "--loss",
@@ -51,15 +46,21 @@ def script_train():
         type=str,
         default="binary_crossentropy",
         help="type of loss function with which you want to compile your model",
-        required=True,
+        required=False,
+    )
+    my_parser.add_argument(
+        "--imgnetweights",
+        dest="imagenet_weights_path",
+        type=str,
+        help="Path to the image net pretrained weights file",
+        required=False,
     )
     my_parser.add_argument(
         "--weights",
         dest="weights_path",
         type=str,
-        default="/Data/vgg16_weights_tf_dim_ordering_tf_kernels.h5",
-        help="Path to the model's weights file",
-        required=True,
+        help="Path to the model's pretrained weights file",
+        required=False,
     )
 
     my_parser.add_argument(
@@ -82,17 +83,18 @@ def script_train():
 
     args = my_parser.parse_args()
 
+    # Parameters
+    num_classes = 8
+    input_shape = (224, 224, 3)
+    lr = 0.001
+
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", "vgg16")
 
-    # import data
+    # Load data
     (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_data(args.data_folder)
 
     X_train = vgg16.preprocess_input(X_train)
-
-    # Hyper parameters
-    num_classes = 8
-    input_shape = (224, 224, 3)
 
     # Metrics
     defined_metrics = [
@@ -102,13 +104,13 @@ def script_train():
         tf.keras.metrics.AUC(name="auc"),
     ]
 
-    model = Vgg16(
-        input_shape=input_shape, metrics=defined_metrics, weights_path=args.weights_path
-    )
+    # Model
+    model = Vgg16(num_class=num_classes, input_shape=input_shape)
+    if args.imagenet_weights_path is not None:
+        model.image_net_load_weights(weights_path=args.weights_path)
 
-    lr = 0.001
-    model.image_net_load_weights()
-    model = model.compile(args.loss, lr)
+    if args.weights_path is not None:
+        model.load_weights(path=args.weights_path)
 
     mlflow.log_param("Batch size", args.num_batch)
     mlflow.log_param("Epochs", args.num_epochs)
@@ -119,44 +121,48 @@ def script_train():
     mlflow.log_param("Validation data size", X_val.shape[0])
     mlflow.log_param("Testing data size", X_test.shape[0])
 
-    model, history = train_from_file(
-        model=model,
-        X_train=X_train,
-        y_train=y_train,
-        X_val=X_val,
-        y_val=y_val,
-        batch_size=args.num_batch,
-        epochs=args.num_epochs,
-        patience=args.patience,
+    # Optimizer
+    sgd = SGD(lr=lr, decay=1e-6, momentum=0.9, nesterov=True)
+
+    # Callbacks
+    earlyStoppingCallback = tf.keras.callbacks.EarlyStopping(
+        monitor="val_loss", patience=args.patience, mode="min", verbose=1
     )
 
+    # Train
+    history = model.train(
+        epochs=args.num_epochs,
+        loss="binary_crossentropy",
+        metrics=defined_metrics,
+        callbacks=[MlflowCallback(), earlyStoppingCallback],
+        optimizer=sgd,
+        train_data_loader=None,
+        validation_data_loader=None,
+        X=X_train,
+        Y=y_train,
+        X_val=X_val,
+        Y_val=y_val,
+        batch_size=args.num_batch,
+        shuffle=True,
+    )
+    print("model trained successfuly.")
+
+    # Save
     print("Saving models weights...")
     model_file = os.path.join(args.result, "model_weights_vgg16.h5")
-    save_weights(model, model_file)
+    model.save(model_file)
     mlflow.log_artifact(model_file)
-    print("plotting...")
-
-    tags = {"output_path": args.result, "model_name": "vgg16"}
 
     # Set a batch of tags
+    tags = {"output_path": args.result, "model_name": "vgg16"}
     mlflow.set_tags(tags)
 
-    class_names = [
-        "Normal",
-        "Diabetes",
-        "Glaucoma",
-        "Cataract",
-        "AMD",
-        "Hypertension",
-        "Myopia",
-        "Others",
-    ]
-
+    # Plot
+    print("plotting...")
     accuracy_plot_figure = os.path.join(args.result, "VGG16_accuracy.png")
     metrics_plot_figure = os.path.join(args.result, "VGG16_metrics.png")
-
-    plot_accuracy(history=history, path=os.path.join(args.result, "VGG16_accuracy.png"))
-    plot_metrics(history=history, path=os.path.join(args.result, "VGG16_metrics.png"))
+    p.plot_accuracy(history=history, path=accuracy_plot_figure)
+    p.plot_metrics(history=history, path=metrics_plot_figure)
 
     mlflow.log_artifact(accuracy_plot_figure)
     mlflow.log_artifact(metrics_plot_figure)

@@ -1,19 +1,14 @@
 import os
-import sys
-import tensorflow as tf
 import argparse
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
-from train.vgg19_train import vgg19_train
-from models.vgg19_model import Vgg19
-from tensorflow.keras.applications import vgg19
 import mlflow
-from tensorflow.keras.optimizers import SGD
-from utils.utils import load_data
-from utils.plotter_utils import *
+import tensorflow as tf
+from tensorflow.keras.applications import vgg19
+
+from eye.train.vgg19_train import vgg19_train
+from eye.models.vgg19_model import Vgg19
+from eye.utils.utils import load_data
+from eye.utils import plotter_utils as p
 
 # pyhton file.py data_folder_path weights.h5_path output_folder_path batch_size epochs patience loss
 # python eye\scripts\vgg19_train_script.py --data_path ..\data --weights_path ..\weights\vgg19_weights.h5 --output_folder eye\train\vgg19_train_outputs --batch_size 8 --epoch 3 --patience 5 --loss binary_crossentropy --model_name vgg19_model.h5
@@ -124,12 +119,12 @@ class_names = [
 
 print("plotting metrics")
 metric_plot_figure = os.path.join(args.output_folder, "metrics_plot.png")
-plot_metrics(history, os.path.join(args.output, "metrics_plot.png"))
+p.plot_metrics(history, os.path.join(args.output, "metrics_plot.png"))
 mlflow.log_artifact(metric_plot_figure)
 
 print("plotting accuracy")
 accuracy_plot_figure = os.path.join(args.output_folder, "accuracy_plot.png")
-plot_accuracy(history, os.path.join(args.output, "accuracy_plot.png"))
+p.plot_accuracy(history, os.path.join(args.output, "accuracy_plot.png"))
 mlflow.log_artifact(accuracy_plot_figure)
 
 mlflow.end_run()

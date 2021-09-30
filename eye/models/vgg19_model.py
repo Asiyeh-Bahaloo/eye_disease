@@ -1,4 +1,3 @@
-import tensorflow
 from tensorflow.keras import models, layers
 from tensorflow.keras.applications import VGG19
 from tensorflow.keras.optimizers import SGD

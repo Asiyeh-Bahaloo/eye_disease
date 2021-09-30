@@ -1,14 +1,10 @@
-import sys, os
-
-curr = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(curr)
-sys.path.append(parent)
-
-from evaluation.ResnetV2_evaluation import resnet_v2_evaluate
-from utils.utils import load_data
-from models.ResnetV2 import Resnet_v2
-import tensorflow as tf
 import argparse
+import tensorflow as tf
+
+from eye.evaluation.ResnetV2_evaluation import resnet_v2_evaluate
+from eye.utils.utils import load_data
+from eye.models.ResnetV2 import Resnet_v2
+
 
 if __name__ == "__main__":
     defined_metric = [

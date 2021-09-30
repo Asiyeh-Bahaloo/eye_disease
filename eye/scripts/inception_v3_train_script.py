@@ -1,15 +1,13 @@
-
 import sys
 import os
-sys.path.append(os.getcwd())
-
-from eye.utils import data_loader_dataframe as data_loader
-from eye.models import Inception_V3 as Inception
+import argparse as ap
 
 import tensorflow.keras.callbacks as callbacks
 from tensorflow.keras.optimizers import Adam
-import argparse as ap
 from tensorflow.keras import metrics
+
+from eye.utils import data_loader_dataframe as data_loader
+from eye.models import Inception_V3 as Inception
 from eye.train.inception_v3_train import train
 
 # getting arguments from terminal

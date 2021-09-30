@@ -1,11 +1,6 @@
-import os, sys
 import argparse
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
-from preprocess import ben_graham
+from eye.preprocess.preprocess import resize_image
 
 
 if __name__ == "__main__":
@@ -28,17 +23,28 @@ if __name__ == "__main__":
         default="/Dataset/preprocessed",
     )
     parser.add_argument(
-        "-sc",
-        "--scale",
+        "-iw",
+        "--image_width",
         type=int,
-        help="Scale",
+        help="Width of the image you want to resize",
+        required=True,
+        default="/Dataset/preprocessed",
+    )
+    parser.add_argument(
+        "-k",
+        "--keep_aspect_ration",
+        type=bool,
+        help="Do we keep the original image hight and width ratio or just resize to a square?",
         required=True,
         default="/Dataset/preprocessed",
     )
 
     args = parser.parse_args()
 
-    ben_graham(args.source_dir, args.target_dir, args.scale)
+    resize_image(
+        args.image_width, args.source_dir, args.target_dir, args.keep_aspect_ration
+    )
+
 
 ## Running
-# python script_graham.py -s /Dataset/ToPreprocess -t /Dataset/preprocessed -sc 300
+# python script.py -s /Dataset/ToPreprocess -t /Dataset/resized_images -iw 224 -k False

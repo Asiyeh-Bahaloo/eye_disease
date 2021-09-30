@@ -1,19 +1,13 @@
-import sys, os
-
-curr = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(curr)
-sys.path.append(parent)
-
-
-from train.ResnetV2_training import resnet_v2_training
-from utils.utils import load_data
-from utils.ResnetV2_save_weights import save_weights
-from eye.utils.plotter_utils import *
-from models.ResnetV2 import Resnet_v2
-import tensorflow as tf
-import mlflow
-
+import os
 import argparse
+
+import mlflow
+import tensorflow as tf
+
+from eye.models.ResnetV2 import Resnet_v2
+from eye.train.ResnetV2_training import resnet_v2_training
+from eye.utils.utils import load_data
+from eye.utils import plotter_utils as p
 
 
 if __name__ == "__main__":
@@ -148,12 +142,12 @@ if __name__ == "__main__":
 
 print("plotting metrics")
 metric_plot_figure = os.path.join(args.result_path, "metrics_plot.png")
-plot_metrics(history, os.path.join(args.result_path, "metrics_plot.png"))
+p.plot_metrics(history, os.path.join(args.result_path, "metrics_plot.png"))
 mlflow.log_artifact(metric_plot_figure)
 
 print("plotting accuracy")
 accuracy_plot_figure = os.path.join(args.result_path, "accuracy_plot.png")
-plot_accuracy(history, os.path.join(args.result_path, "accuracy_plot.png"))
+p.plot_accuracy(history, os.path.join(args.result_path, "accuracy_plot.png"))
 mlflow.log_artifact(accuracy_plot_figure)
 
 mlflow.end_run()

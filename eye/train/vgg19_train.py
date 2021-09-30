@@ -1,13 +1,6 @@
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow.keras.applications import vgg19
-import os, sys
 
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-import argparse
-from utils.utils import MlflowCallback
+from .utils.utils import MlflowCallback
 
 
 def vgg19_train(
