@@ -19,7 +19,7 @@ class BaseModel(ABC):
         callbacks,
         epochs,
         loss,
-        omtimizer=Adam(),
+        optimizer,
         train_data_loader=None,
         validation_data_loader=None,
         X=None,
@@ -34,10 +34,10 @@ class BaseModel(ABC):
     def evaluate(
         self,
         loss,
+        metrics,
         test_data_loader=None,
         X=None,
         Y=None,
-        metrics=["accuracy"],
         **kwargs,
     ):
         raise NotImplementedError()

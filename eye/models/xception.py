@@ -7,7 +7,7 @@ from .model import KerasClsBaseModel
 
 
 class Xception(KerasClsBaseModel):
-    """Vgg16 a model based on VGG16 model to detect disease
+    """Xception a model based on Xception model to detect disease
 
     Parameters
     ----------

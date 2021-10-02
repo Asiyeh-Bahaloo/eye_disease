@@ -15,13 +15,13 @@ from eye.utils import plotter_utils as p
 def parse_arguments():
     # define arguments
     parser = argparse.ArgumentParser(
-        description="Argumnts for training the VGG16 model"
+        description="Arguments for evaluating the inception_v3 model"
     )
     parser.add_argument(
         "--weights",
         dest="weights_path",
         type=str,
-        default="/Data/model_weights_vgg16.h5",
+        default="/Data/model_weights_inception_v3.h5",
         help="Path to the model's weights file",
         required=True,
     )
