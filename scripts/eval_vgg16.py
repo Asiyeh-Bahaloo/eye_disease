@@ -1,7 +1,5 @@
 import os
-import sys
 import argparse
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications.vgg16 import preprocess_input
 
@@ -13,7 +11,7 @@ from eye.utils import plotter_utils as p
 def parse_arguments():
     # define arguments
     parser = argparse.ArgumentParser(
-        description="Argumnts for training the VGG16 model"
+        description="Arguments for evaluating the VGG16 model"
     )
     parser.add_argument(
         "--weights",

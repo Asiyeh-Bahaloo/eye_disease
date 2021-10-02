@@ -1,7 +1,5 @@
 import os
 import argparse
-import matplotlib.pyplot as plt
-
 import mlflow
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
@@ -14,7 +12,7 @@ from eye.utils.utils import load_data, MlflowCallback
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Argumnts for training the VGG16 model"
+        description="Arguments for training the VGG16 model"
     )
     parser.add_argument(
         "--batch_size",
@@ -135,7 +133,7 @@ def main():
     model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
     if args.imagenet_weights_path is not None:
         model.image_net_load_weights(weights_path=args.imagenet_weights_path)
-
+    #need to check
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
 
@@ -169,7 +167,7 @@ def main():
     # Train
     history = model.train(
         epochs=args.epochs,
-        loss="binary_crossentropy",
+        loss=args.loss,
         metrics=metrics,
         callbacks=[MlflowCallback(), earlyStoppingCallback],
         optimizer=sgd,
