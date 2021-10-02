@@ -132,7 +132,7 @@ def main():
     # Model
     model = Vgg19(num_classes=num_classes, input_shape=(224, 224, 3))
     if args.imagenet_weights_path is not None:
-        model.image_net_load_weights(weights_path=args.imagenet_weights_path)
+        model.load_imagenet_weights(weights_path=args.imagenet_weights_path)
     # need to check
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
