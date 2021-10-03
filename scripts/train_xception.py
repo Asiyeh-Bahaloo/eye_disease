@@ -46,9 +46,10 @@ def parse_arguments():
     )
     parser.add_argument(
         "--imgnetweights",
-        dest="imagenet_weights_path",
-        type=str,
-        help="Path to the image net pretrained weights file",
+        dest="imagenet_weights_flag",
+        type=bool,
+        default=False,
+        help="the flag that you set true or false for useing imgnetweights",
         required=False,
     )
     parser.add_argument(
@@ -109,7 +110,7 @@ def parse_arguments():
     return args
 
 
-# python eye/scripts/train_xception.py --batch=2 --epoch=1 --patience=5 --loss=binary_crossentropy --data=./Data --result=./Data
+# python scripts/train_xception.py --batch=2 --epoch=1 --patience=5 --loss=binary_crossentropy --data=./Data --result=./Data
 def main():
     args = parse_arguments()
 
@@ -131,9 +132,9 @@ def main():
 
     # Model
     model = Xception(num_classes=num_classes)
-    if args.imagenet_weights_path is not None:
-        model.image_net_load_weights(weights_path=args.imagenet_weights_path)
-    # need to check
+    if args.imagenet_weights_flag:
+        model.image_net_load_weights()
+
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
 
