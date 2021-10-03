@@ -50,7 +50,7 @@ def parse_arguments():
     return args
 
 
-# python eye/scripts/eval_vgg16.py --weights=./Data/model_weights_vgg16.h5 --data=./Data --result=./Data
+# python scripts/eval_vgg16.py --weights=./Data/model_weights_vgg16.h5 --data=./Data --result=./Data
 def main():
     args = parse_arguments()
 

@@ -109,7 +109,7 @@ def parse_arguments():
     return args
 
 
-# python eye/scripts/train_vgg16.py --batch=2 --epoch=1 --patience=5 --loss=binary_crossentropy --data=./Data --result=./Data
+# python scripts/train_vgg16.py --batch=2 --epoch=1 --patience=5 --loss=binary_crossentropy --data=./Data --result=./Data
 def main():
     args = parse_arguments()
 
@@ -132,8 +132,8 @@ def main():
     # Model
     model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
     if args.imagenet_weights_path is not None:
-        model.image_net_load_weights(weights_path=args.imagenet_weights_path)
-    #need to check
+        model.load_imagenet_weights(path=args.imagenet_weights_path)
+    # need to check
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
 
