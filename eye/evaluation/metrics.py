@@ -1,4 +1,6 @@
 from sklearn import metrics
+from keras import backend as K
+import tensorflow as tf
 
 
 def kappa_score(gt, pred, threshold=0.5):
@@ -92,3 +94,50 @@ def final_score(gt, pred, threshold=0.5):
     f1 = f1_score(gt, pred, threshold)
     auc = auc_score(gt, pred)
     return (kappa + f1 + auc) / 3.0
+
+
+def specificity(y_true, y_pred):
+    """specificity function calculate  the specificity of model
+
+    this function with getting true label and predicted label of model calculates  the specificity
+    also we can pass this function as parameters to compile function
+
+    Parameters
+    ----------
+    y_true : numpy array
+        the matrix of true label
+    y_pred : numpy array
+        the matrix of predicted label
+
+    Returns
+    -------
+    tf.tensor
+        it is the only number of specificity
+    """
+    tn = K.sum(K.round(K.clip((1 - y_true) * (1 - y_pred), 0, 1)))
+    fp = K.sum(K.round(K.clip((1 - y_true) * y_pred, 0, 1)))
+    return tn / (tn + fp + K.epsilon())
+
+
+def sensitivity(y_true, y_pred):
+    """sensitivity function calculate  the specificity of sensitivity
+
+    this function with getting true label and predicted label of model calculates  the sensitivity
+    also we can pass this function as parameters to compile function
+
+    Parameters
+    ----------
+    y_true : numpy array
+        the matrix of true label
+    y_pred : numpy array
+        the matrix of predicted label
+
+    Returns
+    -------
+    tf.tensor
+        it is the only number of sensitivity
+    """
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    possible_positives = tf.cast(possible_positives, tf.float32)
+    return true_positives / (possible_positives + K.epsilon())
