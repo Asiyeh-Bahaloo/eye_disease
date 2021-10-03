@@ -1,6 +1,5 @@
 import os
 import argparse
-
 import mlflow
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
@@ -49,9 +48,10 @@ def parse_arguments():
     )
     parser.add_argument(
         "--imgnetweights",
-        dest="imagenet_weights_path",
-        type=str,
-        help="Path to the image net pretrained weights file",
+        dest="imagenet_weights",
+        type=bool,
+        default=True,
+        help="determines to load imagenet pretrained weight or not",
         required=False,
     )
     parser.add_argument(
@@ -134,8 +134,8 @@ def main():
 
     # Model
     model = InceptionV3(num_classes=num_classes)
-    if args.imagenet_weights_path is not None:
-        model.image_net_load_weights(weights_path=args.imagenet_weights_path)
+    if args.imagenet_weights:
+        model.load_imagenet_weights()
     #need to check
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
