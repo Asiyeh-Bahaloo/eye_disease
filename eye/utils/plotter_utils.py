@@ -4,6 +4,8 @@ import numpy as np
 import seaborn as sns
 import matplotlib as mpl
 
+import streamlit as st
+
 
 def plot_metrics(history, path):
     """
@@ -443,3 +445,37 @@ def plot_confusion_matrix_sns(y_test, pred, path_result):
     )
     plt.show()
     plt.close()
+
+
+def plot_image_in_UI(pred, image, class_names):
+    """plot_image_in_UI function display each image with 3 most possible labels
+
+    this functyin get list of image and say what is the 3 most possible labels greater than 0.5
+
+    Parameters
+    ----------
+    pred : numpy array
+        the array of probability of each label
+    image : python list
+        list of input image
+    class_names : python list
+        list of name of each class
+    """
+
+    for i in range(len(image)):
+        # show image in page
+        st.image(image[i])
+        # indicate the 3 most possible label
+        first, second, third, i, j, k = calculate_3_largest(np.transpose(pred[i]), 8)
+        # indicate which label is greater than 0.5 and filter them
+        prediction = "{} {:2.0f}% \n".format(class_names[i], 100 * first)
+        if second >= 0.5:
+            prediction = prediction + "{} {:2.0f}% \n".format(
+                class_names[j], 100 * second
+            )
+        if third >= 0.5:
+            prediction = prediction + "{} {:2.0f}% \n".format(
+                class_names[k], 100 * third
+            )
+        # write the most possible label below the image
+        st.write("Predicted: {}".format(prediction))
