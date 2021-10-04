@@ -3,11 +3,22 @@ import argparse
 import mlflow
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
-from tensorflow.keras.applications.vgg16 import preprocess_input  # for preprocess
 
 from eye.models.vgg16 import Vgg16
 from eye.utils import plotter_utils as p
-from eye.utils.utils import load_data, MlflowCallback
+from eye.utils.utils import MlflowCallback
+from eye.data.dataloader import ODIR_Dataloader
+from eye.data.dataset import ODIR_Dataset
+from eye.data.transforms import (
+    Compose,
+    Resize,
+    RemovePadding,
+    BenGraham,
+    RandomShift,
+    RandomFlipLR,
+    RandomFlipUD,
+    KerasPreprocess,
+)
 
 
 def parse_arguments():
@@ -69,6 +80,24 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        "--train_label",
+        dest="train_label_file",
+        type=str,
+        default="/Data/train_labels.csv",
+        help="Path to the train input labels file (.csv)",
+        required=True,
+    )
+
+    parser.add_argument(
+        "--val_label",
+        dest="val_label_file",
+        type=str,
+        default="/Data/val_labels.csv",
+        help="Path to the val input labels file (.csv)",
+        required=True,
+    )
+
+    parser.add_argument(
         "--result",
         dest="result",
         type=str,
@@ -120,14 +149,53 @@ def main():
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", tag)
 
-    # Load data
-    # TODO: use dataloaders instead
-    (X_train, y_train), (X_val, y_val), (X_test, _) = load_data(args.data_folder)
+    # create compose for both train and validation sets
+    compose_train = Compose(
+        transforms=[
+            RemovePadding(),
+            BenGraham(350),
+            Resize((224, 224), False),
+            KerasPreprocess(model_name="vgg16"),
+            # RandomShift(0.2, 0.3),
+            # RandomFlipLR(),
+            # RandomFlipUD(),
+        ]
+    )
 
-    # TODO: Move preprocess to 'data' module and call them in dataloader
-    X_train = preprocess_input(X_train)
-    X_val = preprocess_input(X_val)
-    X_test = preprocess_input(X_test)
+    compose_val = Compose(
+        transforms=[
+            RemovePadding(),
+            # BenGraham(350),
+            Resize((224, 224), False),
+            KerasPreprocess(model_name="vgg16"),
+            # RandomShift(0.2, 0.3),
+            # RandomFlipLR(),
+            # RandomFlipUD(),
+        ]
+    )
+
+    # create both train and validation sets
+    train_dataset = ODIR_Dataset(
+        img_folder_path=args.data_folder,
+        csv_path=args.train_label_file,
+        img_shape=(224, 224),
+        num_classes=8,
+        frac=0.01,
+        transforms=compose_train,
+    )
+
+    val_dataset = ODIR_Dataset(
+        img_folder_path=args.data_folder,
+        csv_path=args.val_label_file,
+        img_shape=(224, 224),
+        num_classes=8,
+        frac=0.01,
+        transforms=compose_val,
+    )
+
+    # create both train and validation dataloaders
+    train_DL = ODIR_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
+    val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
     model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
@@ -142,9 +210,8 @@ def main():
     mlflow.log_param("Patience", args.patience)
     mlflow.log_param("Loss", args.loss)
     mlflow.log_param("Learning rate", args.lr)
-    mlflow.log_param("Training data size", X_train.shape[0])
-    mlflow.log_param("Validation data size", X_val.shape[0])
-    mlflow.log_param("Testing data size", X_test.shape[0])
+    mlflow.log_param("Training data size", len(train_dataset))
+    mlflow.log_param("Validation data size", len(val_dataset))
 
     # Optimizer
     sgd = SGD(
@@ -171,13 +238,10 @@ def main():
         metrics=metrics,
         callbacks=[MlflowCallback(), earlyStoppingCallback],
         optimizer=sgd,
-        train_data_loader=None,
-        validation_data_loader=None,
-        X=X_train,
-        Y=y_train,
-        X_val=X_val,
-        Y_val=y_val,
+        train_data_loader=train_DL,
+        validation_data_loader=val_DL,
         batch_size=args.batch_size,
+        steps_per_epoch=len(train_DL),
         shuffle=True,
     )
     print("model trained successfuly.")
