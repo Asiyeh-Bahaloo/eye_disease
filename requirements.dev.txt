@@ -16,7 +16,7 @@ mlflow
 streamlit
 scikit-image
 opencv-python
-
+tqdm
 
 
 
