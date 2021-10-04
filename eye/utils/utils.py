@@ -1,5 +1,4 @@
 import os
-import sys
 import mlflow
 import tensorflow as tf
 import numpy as np
@@ -8,7 +7,7 @@ import csv
 import matplotlib.pyplot as plt
 
 
-from eye.evaluation.metrics import *
+from eye.evaluation.metrics import kappa_score, f1_score, auc_score, final_score
 
 
 def read_yaml(dir):
