@@ -1,7 +1,6 @@
 .ssh/
 Data/
 docs/sphinx/build/
-eye/data
 tests/Container
 docs/sphinx/source/_build/
 __pycache__/
