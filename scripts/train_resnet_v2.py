@@ -48,9 +48,9 @@ def parse_arguments():
     )
     parser.add_argument(
         "--imgnetweights",
-        dest="imagenet_weights_path",
-        type=str,
-        help="Path to the image net pretrained weights file",
+        dest="imagenet_weights",
+        type=bool,
+        help="Whether to use imagenet weights or not?",
         required=False,
     )
     parser.add_argument(
@@ -133,8 +133,8 @@ def main():
 
     # Model
     model = ResnetV2(num_classes=num_classes)
-    if args.imagenet_weights_path is not None:
-        model.image_net_load_weights(weights_path=args.imagenet_weights_path)
+    if args.imagenet_weights:
+        model.load_imagenet_weights()
     # need to check
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
