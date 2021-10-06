@@ -80,8 +80,12 @@ class ODIR_Dataloader(Sequence):
             batch_image_id = self.dataset.df["ID"][
                 index * self.batch_size : (index + 1) * self.batch_size
             ]
-            X = [self.dataset.get_image(file_id) for file_id in batch_image_id]
-            Y = [self.dataset.get_label(file_id) for file_id in batch_image_id]
+            # X = [self.dataset.get_image(file_id) for file_id in batch_image_id]
+            # Y = [self.dataset.get_label(file_id) for file_id in batch_image_id]
+
+            batch_items = [self.dataset.get_item(file_id) for file_id in batch_image_id]
+            X = [ls[0] for ls in batch_items]
+            Y = [ls[1] for ls in batch_items]
 
             img_shape = (self.batch_size,) + self.dataset.img_shape + (3,)
 
