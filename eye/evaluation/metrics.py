@@ -2,10 +2,9 @@ from sklearn import metrics
 from keras import backend as K
 import tensorflow as tf
 
-
 def kappa_score(gt, pred, threshold=0.5):
     """
-    returns kappa score based on the grounf trouth and predictions.
+    returns kappa score based on the ground trouth and predictions.
 
     Parameters
     ----------
@@ -141,3 +140,32 @@ def sensitivity(y_true, y_pred):
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
     possible_positives = tf.cast(possible_positives, tf.float32)
     return true_positives / (possible_positives + K.epsilon())
+    
+def get_specific_metrics(x_test, y_test, model, metrics, loss):
+    """get_specific_metrics get desired metrics for given model
+
+    Parameters
+    ----------
+    x_test : tensor
+        testing input as a tensor
+    y_test : tensor
+        actual labels as a tensor
+    model : keras.Model
+        the model that will be evaluated
+    metrics : list, optional
+        list of desired metrics
+    loss : keras.loss
+        loss function to evaluate model
+
+    Returns
+    -------
+    list
+        loss and desired metrics in a list respectively
+    """
+
+    # getting metrics that will be calculated by model.evaluate
+    score, metric_names = model.evaluate(X=x_test,Y=y_test,metrics=metrics, loss=loss) , model.model.metrics_names
+
+    
+    return score, metric_names
+

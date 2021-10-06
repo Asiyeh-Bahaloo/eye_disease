@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_curve
 import numpy as np
 import seaborn as sns
 import matplotlib as mpl
-
 import streamlit as st
 
+from eye.evaluation.metrics import get_specific_metrics
 
 def plot_metrics(history, path):
     """
@@ -479,3 +479,72 @@ def plot_image_in_UI(pred, image, class_names):
             )
         # write the most possible label below the image
         st.write("Predicted: {}".format(prediction))
+
+
+def multi_label_roc(output_path, y_true, y_pred,labels_list = ['Normal', 'Diabetes', 'Glaucoma','Cataract', 'AMD',  'Hypertension', 'Myopia',]):
+    """multi_label_roc plot roc for each label
+
+    Parameters
+    ----------
+    output_path : str
+        path to save plot there (should include the name)
+    y_true : list or numpy.ndarray
+        actual labels
+    y_pred : list or numpy.ndarray
+        predicted labels
+    labels_list : list, optional
+        list of the label will be plot, by default ['Normal', 'Diabetes', 'Glaucoma','Cataract', 'AMD',  'Hypertension', 'Myopia',]
+    """
+    y_true, y_pred = np.array(y_true), np.array(y_pred)
+    y_pred = (y_pred.argmax(1)[:,None] == np.arange(y_pred.shape[1])).astype(int)
+
+    for cls in range(len(labels_list)):
+        fpr, tpr, _ = roc_curve(y_true[:,cls], y_pred[:,cls])
+
+        plt.plot(100 * fpr, 100 * tpr, label=labels_list[cls], linewidth=2,)
+    plt.xlabel('False positives [%]')
+    plt.ylabel('True positives [%]')
+    plt.grid(True)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    plt.legend(loc='lower right')
+    plt.savefig(output_path+  '.png')
+    # plt.show()  
+    plt.close()
+
+
+
+def model_compare(x_test, y_test, models, tags, output_path, metrics, loss):
+    """model_compare compares models in a graph based on given metrics
+
+    Parameters
+    ----------
+    x_test : tensor
+        testing input as a tensor
+    y_test : tensor
+        actual labels as a tensor
+    models : keras.Model
+        models that will be compared
+    tags: list[str]
+        tag for each model to show in plot, respective to models order
+    path : str
+        path and name the graph to be saved
+    metrics : list, optional
+        the metrics for comparing models, 
+    loss : keras.loss or str
+        loss function to evaluate models        
+    """
+    tag_idx = 0
+    for model in models:
+        calculated_metrics, metrics_names = get_specific_metrics(x_test,y_test,model, metrics, loss)
+        y = calculated_metrics
+        x = metrics_names
+        plt.plot(x, y, label=tags[tag_idx])
+        tag_idx +=1
+        labels = metrics_names
+        plt.xticks(x, labels, rotation='vertical')
+        plt.margins(0.2)
+        plt.subplots_adjust(bottom=0.15)
+    plt.legend()
+    # plt.show()
+    plt.savefig(output_path +  '.png')
