@@ -208,4 +208,3 @@ class MlflowCallback(tf.keras.callbacks.Callback):
         mlflow.log_param("num_layers", len(self.model.layers))
         mlflow.log_param("optimizer_name", type(self.model.optimizer).__name__)
 
-    plt.show()
