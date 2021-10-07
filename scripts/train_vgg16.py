@@ -7,8 +7,8 @@ from tensorflow.keras.optimizers import SGD
 from eye.models.vgg16 import Vgg16
 from eye.utils import plotter_utils as p
 from eye.utils.utils import MlflowCallback
-from eye.data.dataloader import ODIR_Dataloader
-from eye.data.dataset import ODIR_Dataset
+from eye.data.dataloader import ODIR_Dataloader, Cataract_Dataloader
+from eye.data.dataset import ODIR_Dataset, Cataract_Dataset
 from eye.data.transforms import (
     Compose,
     Resize,
@@ -174,28 +174,53 @@ def main():
         ]
     )
 
+    ########################### MAIN DATASET ############################
+    # # create both train and validation sets
+    # train_dataset = ODIR_Dataset(
+    #     img_folder_path=args.data_folder,
+    #     csv_path=args.train_label_file,
+    #     img_shape=(224, 224),
+    #     num_classes=8,
+    #     frac=0.01,
+    #     transforms=compose_train,
+    # )
+
+    # val_dataset = ODIR_Dataset(
+    #     img_folder_path=args.data_folder,
+    #     csv_path=args.val_label_file,
+    #     img_shape=(224, 224),
+    #     num_classes=8,
+    #     frac=0.01,
+    #     transforms=compose_val,
+    # )
+
+    # # create both train and validation dataloaders
+    # train_DL = ODIR_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
+    # val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
+
+    ########################### SECOND DATASET ############################
     # create both train and validation sets
-    train_dataset = ODIR_Dataset(
+    train_dataset = Cataract_Dataset(
         img_folder_path=args.data_folder,
         csv_path=args.train_label_file,
         img_shape=(224, 224),
-        num_classes=8,
+        num_classes=4,
         frac=0.01,
         transforms=compose_train,
     )
 
-    val_dataset = ODIR_Dataset(
+    val_dataset = Cataract_Dataset(
         img_folder_path=args.data_folder,
         csv_path=args.val_label_file,
         img_shape=(224, 224),
-        num_classes=8,
+        num_classes=4,
         frac=0.01,
         transforms=compose_val,
     )
 
     # create both train and validation dataloaders
-    train_DL = ODIR_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
-    val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
+    train_DL = Cataract_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
+    val_DL = Cataract_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
     model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
