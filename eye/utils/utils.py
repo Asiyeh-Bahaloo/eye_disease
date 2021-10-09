@@ -5,6 +5,7 @@ import numpy as np
 import yaml
 import csv
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 
 from eye.evaluation.metrics import kappa_score, f1_score, auc_score, final_score
@@ -208,3 +209,28 @@ class MlflowCallback(tf.keras.callbacks.Callback):
         mlflow.log_param("num_layers", len(self.model.layers))
         mlflow.log_param("optimizer_name", type(self.model.optimizer).__name__)
 
+
+def find_similar_images(indices, filenames, result_folder):
+    """[summary]
+
+    Parameters
+    ----------
+    indices : [type]
+        [description]
+    filenames : list
+        list of all training images names
+    result_folder : str
+        The address which you want to place similar images
+    """
+    plt.figure(figsize=(15, 10), facecolor="white")
+    plotnumber = 1
+    for index in indices:
+        if plotnumber < len(indices):
+            ax = plt.subplot(2, 4, plotnumber)
+            plt.imshow(mpimg.imread(filenames[index]), interpolation="lanczos")
+            plt.imsave(
+                result_folder + "/" + str(plotnumber) + ".jpg",
+                mpimg.imread(filenames[index]),
+            )
+            plotnumber += 1
+    plt.tight_layout()
