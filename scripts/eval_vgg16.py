@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from eye.models.vgg16 import Vgg16
-from eye.utils.utils import pprint_metrics, calc_metrics
+from eye.utils.utils import pprint_metrics, calc_metrics, load_data
 from eye.utils import plotter_utils as p
 from eye.data.transforms import (
     Compose,
@@ -21,6 +21,7 @@ from eye.data.transforms import (
     RandomFlipUD,
     KerasPreprocess,
 )
+from eye.evaluation.metrics import *
 
 
 def parse_arguments():
@@ -78,6 +79,7 @@ def parse_arguments():
 # python scripts/eval_vgg16.py --weights=./Data/model_weights_vgg16.h5 --data=./Data --result=./Data
 def main():
     args = parse_arguments()
+    tf.config.run_functions_eagerly(True)
 
     # Parameters
     num_classes = 8
@@ -105,6 +107,7 @@ def main():
     # temp list for storing images
     X_test_ls = []
     Y_test_ls = []
+    Y_test2_ls = []
 
     for idx, filename in enumerate(tqdm(sorted(glob.glob("*.jpg")))):
 
@@ -118,11 +121,15 @@ def main():
             image_id = int(filename[: filename.find("_")])
             Y_test_ls.append(df.loc[df["ID"] == image_id, class_names].to_numpy())
 
+        Y_test2_ls.append(Y_test_ls[-1])
+
     img_shape = (len(X_test_ls),) + (X_test_ls[0].shape)
     label_shape = (len(Y_test_ls),) + (Y_test_ls[0].shape[1],)
+    label2_shape = (len(Y_test2_ls),) + (Y_test2_ls[0].shape[1],)
 
     X_test = np.stack(X_test_ls, axis=0).reshape(img_shape)
     Y_test = np.stack(Y_test_ls, axis=0).reshape(label_shape)
+    Y_test2 = np.stack(Y_test2_ls, axis=0).reshape(label2_shape)
 
     # Metrics
     defined_metrics = [
@@ -131,6 +138,17 @@ def main():
         tf.keras.metrics.Recall(name="recall"),
         tf.keras.metrics.AUC(name="auc"),
     ]
+
+    for l in range(num_classes):
+        defined_metrics.append(accuracy_per_class(label=l))
+        defined_metrics.append(precision_per_class(label=l))
+        defined_metrics.append(recall_per_class(label=l))
+        defined_metrics.append(kappa_per_class(label=l))
+        defined_metrics.append(f1_per_class(label=l))
+        defined_metrics.append(auc_per_class(label=l))
+        defined_metrics.append(final_per_class(label=l))
+        defined_metrics.append(specificity_per_class(label=l))
+        defined_metrics.append(sensitivity_per_class(label=l))
 
     # Model
     model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
@@ -160,6 +178,40 @@ def main():
     # np.save(os.path.join(args.result_path, "pred_vgg16.npy"), pred)
     # np.save(os.path.join(args.result_path, "y_test_vgg16.npy"), Y_test)
 
+    metrics_name = [
+        "loss",
+        "accuracy",
+        "precision",
+        "recall",
+        "auc",
+    ]
+
+    eval_metrics_name = [
+        "accuracy",
+        "precision",
+        "recall",
+        "kappa",
+        "f1",
+        "auc",
+        "final",
+        "specificity",
+        "sensitivity",
+    ]
+    for name in class_names:
+        for metric in eval_metrics_name:
+            metrics_name.append(name + "_" + metric)
+
+    baseline_results = model.evaluate(
+        metrics=defined_metrics, loss=args.loss, X=X_test, Y=Y_test2
+    )
+
+    # prints detailed scores for each disease
+    detailed_scores_dict = {
+        name: score for score, name in zip(baseline_results, metrics_name)
+    }
+    pprint_metrics(detailed_scores_dict)
+
+    # print only kappa, f1, auc, and final score
     scores_dict = calc_metrics(Y_test, pred, threshold=0.5)
     pprint_metrics(scores_dict)
 
