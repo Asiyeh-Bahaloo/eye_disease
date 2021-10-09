@@ -1,6 +1,7 @@
 import os
 import argparse
 import mlflow
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
 
@@ -230,6 +231,14 @@ def main():
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
 
+    # model trainable and non-trainable parameters
+    trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+    nonTrainableParams = np.sum(
+        [np.prod(v.get_shape()) for v in model.non_trainable_weights]
+    )
+    totalParams = trainableParams + nonTrainableParams
+
+    # mlflow parameters
     mlflow.log_param("Batch size", args.batch_size)
     mlflow.log_param("Epochs", args.epochs)
     mlflow.log_param("Patience", args.patience)
@@ -237,6 +246,9 @@ def main():
     mlflow.log_param("Learning rate", args.lr)
     mlflow.log_param("Training data size", len(train_dataset))
     mlflow.log_param("Validation data size", len(val_dataset))
+    mlflow.log_param("Total params", totalParams)
+    mlflow.log_param("Trainable params", trainableParams)
+    mlflow.log_param("Non-trainable params", nonTrainableParams)
 
     # Optimizer
     sgd = SGD(
