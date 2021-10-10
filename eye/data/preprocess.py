@@ -14,10 +14,10 @@ def resize_image(img, image_shape, keep_aspect_ration=False):
 
     Parameters
     ----------
+    img : numpy.ndarray
+        Input image given as an numpy.ndarray.
     image_shape : tuple
         Width and Height of the input image given in a tuple.
-    img : str
-        Path to the input image
     keep_aspect_ration : bool
         True: Resize image with respect to the original image hight and width ratio
         False: Just resize to a square
@@ -45,11 +45,11 @@ def ben_graham(img, scale):
 
     Parameters
     ----------
-    img : np.ndarray
-        numpy array of the input image
+    img : numpy.ndarray
+        Input image given as an numpy.ndarray.
 
     scale : int
-    Scale 300 seems to be sufficient; 500 and 1000 may be overkill
+        Scale 300 seems to be sufficient; 500 and 1000 may be overkill.
 
     Returns
     -------
@@ -84,8 +84,8 @@ def remove_padding(img):
 
     Parameters
     ----------
-    img : np.ndarray
-        numpy array of the input image
+    img : numpy.ndarray
+        Input image given as an numpy.ndarray.
 
     Returns
     -------

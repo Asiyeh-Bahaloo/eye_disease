@@ -3,8 +3,6 @@ import os
 import cv2
 import numpy as np
 
-from .transforms import Compose
-
 
 class ODIR_Dataset:
     """
@@ -35,8 +33,8 @@ class ODIR_Dataset:
             total number of classes in dataset.
         frac : float
             Number to set the fraction of data you want to consider.
-        transforms: list
-            List of all transform you want to apply on the images.
+        transforms: Compose object
+            Object of the Compose class that contains all the transform you want to use.
         """
         self.img_folder_path = img_folder_path
         self.img_shape = img_shape
@@ -46,9 +44,30 @@ class ODIR_Dataset:
         self.transforms = transforms
 
     def __len__(self):
+        """
+        Returns the length of our dataset. (number of images we have.)
+
+        Returns
+        -------
+        int
+            length of our dataset.
+        """
         return len(self.df)
 
     def get_item(self, image_id):
+        """
+        It gets image_id then returns the image and its label.
+
+        Parameters
+        ----------
+        image_id : str
+            ID of the image you want. (e.g. 7_right.jpg)
+
+        Returns
+        -------
+        image, label
+            wanted image and its label.
+        """
 
         path = os.path.join(self.img_folder_path, image_id)
         img = cv2.imread(path)
@@ -90,7 +109,7 @@ class ODIR_Dataset:
 
     def get_label(self, image_id):
         """
-        This function reads and returns the given image.
+        This function reads and returns the label of the given image.
 
         Parameters
         ----------
@@ -145,8 +164,8 @@ class Cataract_Dataset:
             total number of classes in dataset.
         frac : float
             Number to set the fraction of data you want to consider.
-        transforms: list
-            List of all transform you want to apply on the images.
+        transforms: Compose object
+            Object of the Compose class that contains all the transform you want to use.
         """
         self.img_folder_path = img_folder_path
         self.img_shape = img_shape
@@ -156,10 +175,30 @@ class Cataract_Dataset:
         self.transforms = transforms
 
     def __len__(self):
+        """
+        Returns the length of our dataset. (number of images we have.)
+
+        Returns
+        -------
+        int
+            length of our dataset.
+        """
         return len(self.df)
 
     def get_item(self, image_id):
+        """
+        It gets image_id then returns the image and its label.
 
+        Parameters
+        ----------
+        image_id : str
+            ID of the image you want. (e.g. 7_right.jpg)
+
+        Returns
+        -------
+        image, label
+            wanted image and its label.
+        """
         path = os.path.join(self.img_folder_path, image_id)
         img = cv2.imread(path)
         img = self.transforms(img)
@@ -196,7 +235,7 @@ class Cataract_Dataset:
 
     def get_label(self, image_id):
         """
-        This function reads and returns the given image.
+        This function reads and returns the label of the given image.
 
         Parameters
         ----------
