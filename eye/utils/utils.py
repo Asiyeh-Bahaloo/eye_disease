@@ -204,6 +204,31 @@ class MlflowCallback(tf.keras.callbacks.Callback):
         mlflow.log_metric("auc", logs["auc"], step=epoch)
         mlflow.log_metric("val_auc", logs["val_auc"], step=epoch)
 
+        metrics = [
+            "loss",
+            "accuracy",
+            "precision",
+            "recall",
+            "kappa",
+            "f1",
+            "auc",
+            "final",
+            "specificity",
+            "sensitivity",
+        ]
+        labels = ["N", "D", "G", "C", "A", "H", "M", "O"]
+
+        for metric in metrics:
+            for label in labels:
+                mlflow.log_metric(
+                    label + "_" + metric, logs[metric + "ForLabel" + label], step=epoch
+                )
+                mlflow.log_metric(
+                    "val_" + label + "_" + metric,
+                    logs["val_" + metric + "ForLabel" + label],
+                    step=epoch,
+                )
+
     # This function will be called after training completes.
     def on_train_end(self, logs=None):
         mlflow.log_param("num_layers", len(self.model.layers))

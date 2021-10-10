@@ -1,11 +1,24 @@
 import os
 import argparse
+import mlflow
 import tensorflow as tf
 from tensorflow.keras.applications.xception import preprocess_input  # for preprocess
 
 from eye.models.xception import Xception
 from eye.utils.utils import load_data, pprint_metrics, calc_metrics
 from eye.utils import plotter_utils as p
+from eye.evaluation.metrics import (
+    loss_per_class,
+    accuracy_per_class,
+    precision_per_class,
+    recall_per_class,
+    kappa_per_class,
+    f1_per_class,
+    auc_per_class,
+    final_per_class,
+    specificity_per_class,
+    sensitivity_per_class,
+)
 
 
 def parse_arguments():
@@ -53,10 +66,14 @@ def parse_arguments():
 # python scripts/eval_xception.py --weights=./Data/model_weights_xception.h5 --data=./Data --result=./Data
 def main():
     args = parse_arguments()
+    tf.config.run_functions_eagerly(True)
 
     # Parameters
     num_classes = 8
     tag = "xception"
+
+    mlflow.start_run()
+    mlflow.set_tag("mlflow.runName", tag)
 
     # Load data
     # TODO: use dataloaders instead
@@ -64,6 +81,10 @@ def main():
 
     # TODO: Move preprocess to 'data' module and call them in dataloader
     X_test = preprocess_input(X_test)
+
+    class_names = ["N", "D", "G", "C", "A", "H", "M", "O"]
+
+    mlflow.log_param("Test data size", X_test.shape[0])
 
     # Metrics
     defined_metrics = [
@@ -73,26 +94,67 @@ def main():
         tf.keras.metrics.AUC(name="auc"),
     ]
 
+    for l in range(num_classes):
+        defined_metrics.append(loss_per_class(label=l))
+        defined_metrics.append(accuracy_per_class(label=l))
+        defined_metrics.append(precision_per_class(label=l))
+        defined_metrics.append(recall_per_class(label=l))
+        defined_metrics.append(kappa_per_class(label=l))
+        defined_metrics.append(f1_per_class(label=l))
+        defined_metrics.append(auc_per_class(label=l))
+        defined_metrics.append(final_per_class(label=l))
+        defined_metrics.append(specificity_per_class(label=l))
+        defined_metrics.append(sensitivity_per_class(label=l))
+
     # Model
     model = Xception(num_classes=num_classes)
     model.load_weights(path=args.weights_path)
 
     test_predictions_baseline = model.predict(X_test)
 
+    metrics_name = [
+        "loss",
+        "accuracy",
+        "precision",
+        "recall",
+        "auc",
+    ]
+
+    eval_metrics_name = [
+        "loss",
+        "accuracy",
+        "precision",
+        "recall",
+        "kappa",
+        "f1",
+        "auc",
+        "final",
+        "specificity",
+        "sensitivity",
+    ]
+
+    for name in class_names:
+        for metric in eval_metrics_name:
+            metrics_name.append(name + "_" + metric)
+
     baseline_results = model.evaluate(
         metrics=defined_metrics, loss=args.loss, X=X_test, Y=y_test
     )
-    pprint_metrics(
-        {
-            name: score
-            for score, name in zip(
-                baseline_results, ["loss", "accuracy", "precision", "recall", "auc"]
-            )
-        }
-    )
 
-    scores_dict = calc_metrics(y_test, test_predictions_baseline, threshold=0.5)
-    pprint_metrics(scores_dict)
+    # prints detailed scores for each disease
+    detailed_scores_dict = {
+        name: score for score, name in zip(baseline_results, metrics_name)
+    }
+    for score in detailed_scores_dict.keys():
+        mlflow.log_metric(score, detailed_scores_dict[score])
+
+    pprint_metrics(detailed_scores_dict)
+
+    # # prints only kappa, f1, auc, and final score
+    # scores_dict = calc_metrics(Y_test, pred, threshold=0.5)
+    # for score in scores_dict.keys():
+    #     mlflow.log_param(score, scores_dict[score])
+    # pprint_metrics(scores_dict)
 
     p.plot_confusion_matrix_sns(
         y_test,
@@ -103,6 +165,9 @@ def main():
         "Confusion Matrix saved in ",
         os.path.join(args.result_path, f"{tag}_confusion_mat.png"),
     )
+
+    mlflow.log_artifact(os.path.join(args.result_path, f"{tag}_confusion_mat.png"))
+    mlflow.end_run()
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ import cv2
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
+import mlflow
 
 from eye.models.vgg16 import Vgg16
 from eye.utils.utils import pprint_metrics, calc_metrics, load_data
@@ -21,7 +22,18 @@ from eye.data.transforms import (
     RandomFlipUD,
     KerasPreprocess,
 )
-from eye.evaluation.metrics import *
+from eye.evaluation.metrics import (
+    loss_per_class,
+    accuracy_per_class,
+    precision_per_class,
+    recall_per_class,
+    kappa_per_class,
+    f1_per_class,
+    auc_per_class,
+    final_per_class,
+    specificity_per_class,
+    sensitivity_per_class,
+)
 
 
 def parse_arguments():
@@ -85,6 +97,9 @@ def main():
     num_classes = 8
     tag = "vgg16"
 
+    mlflow.start_run()
+    mlflow.set_tag("mlflow.runName", tag)
+
     # Load data
     compose_test = Compose(
         transforms=[
@@ -123,6 +138,9 @@ def main():
 
         Y_test2_ls.append(Y_test_ls[-1])
 
+    # change directory from Data to main directory
+    os.chdir("../app")
+
     img_shape = (len(X_test_ls),) + (X_test_ls[0].shape)
     label_shape = (len(Y_test_ls),) + (Y_test_ls[0].shape[1],)
     label2_shape = (len(Y_test2_ls),) + (Y_test2_ls[0].shape[1],)
@@ -130,6 +148,8 @@ def main():
     X_test = np.stack(X_test_ls, axis=0).reshape(img_shape)
     Y_test = np.stack(Y_test_ls, axis=0).reshape(label_shape)
     Y_test2 = np.stack(Y_test2_ls, axis=0).reshape(label2_shape)
+
+    mlflow.log_param("Test data size", X_test.shape[0])
 
     # Metrics
     defined_metrics = [
@@ -140,6 +160,7 @@ def main():
     ]
 
     for l in range(num_classes):
+        defined_metrics.append(loss_per_class(label=l))
         defined_metrics.append(accuracy_per_class(label=l))
         defined_metrics.append(precision_per_class(label=l))
         defined_metrics.append(recall_per_class(label=l))
@@ -187,6 +208,7 @@ def main():
     ]
 
     eval_metrics_name = [
+        "loss",
         "accuracy",
         "precision",
         "recall",
@@ -209,11 +231,16 @@ def main():
     detailed_scores_dict = {
         name: score for score, name in zip(baseline_results, metrics_name)
     }
+    for score in detailed_scores_dict.keys():
+        mlflow.log_metric(score, detailed_scores_dict[score])
+
     pprint_metrics(detailed_scores_dict)
 
-    # print only kappa, f1, auc, and final score
-    scores_dict = calc_metrics(Y_test, pred, threshold=0.5)
-    pprint_metrics(scores_dict)
+    # # prints only kappa, f1, auc, and final score
+    # scores_dict = calc_metrics(Y_test, pred, threshold=0.5)
+    # for score in scores_dict.keys():
+    #     mlflow.log_param(score, scores_dict[score])
+    # pprint_metrics(scores_dict)
 
     p.plot_confusion_matrix_sns(
         Y_test,
@@ -224,6 +251,9 @@ def main():
         "Confusion Matrix saved in ",
         os.path.join(args.result_path, f"{tag}_confusion_mat.png"),
     )
+
+    mlflow.log_artifact(os.path.join(args.result_path, f"{tag}_confusion_mat.png"))
+    mlflow.end_run()
 
 
 if __name__ == "__main__":

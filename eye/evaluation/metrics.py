@@ -1,5 +1,6 @@
 from sklearn import metrics
 from keras import backend as K
+from tensorflow.keras.losses import BinaryCrossentropy
 import tensorflow as tf
 import numpy as np
 
@@ -247,26 +248,6 @@ def recall_score(gt, pred, threshold=0.5):
     return metrics.recall_score(gt_flat, pred_flat > threshold)
 
 
-def normal_accuracy(y_true, y_pred):
-    """Calculates the accuracy of normal eyes.
-
-    Parameters
-    ----------
-    y_true : numpy array
-        the matrix of true label
-    y_pred : numpy array
-        the matrix of predicted label
-
-    returns
-    -------
-    Tensor
-        Accuracy of normal eyes.
-    """
-    y_pred = y_pred.numpy()[:, 0]
-    y_true = y_true.numpy()[:, 0]
-    return accuracy_score(y_true, y_pred)
-
-
 def accuracy_per_class(label):
     """A wrapper function that calculates the accuracy of each disease based on the label.
 
@@ -481,3 +462,27 @@ def sensitivity_per_class(label):
 
     sensitivity_per_label.__name__ = f"sensitivityForLabel{class_names[label]}"
     return sensitivity_per_label
+
+
+def loss_per_class(label):
+    """A wrapper function that calculates the loss of each disease based on the label.
+
+    Parameters
+    ----------
+    label : int
+        the class number of the disease
+
+    returns
+    -------
+    function
+        function that calculates the loss of each disease based on the label.
+    """
+    class_names = ["N", "D", "G", "C", "A", "H", "M", "O"]
+
+    def loss_per_label(y_true, y_pred):
+        y_pred = y_pred.numpy()[:, label]
+        y_true = y_true.numpy()[:, label]
+        return K.binary_crossentropy(y_true, y_pred)
+
+    loss_per_label.__name__ = f"lossForLabel{class_names[label]}"
+    return loss_per_label
