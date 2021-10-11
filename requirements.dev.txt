@@ -17,8 +17,4 @@ streamlit
 scikit-image
 opencv-python
 tqdm
-
-
-
-
-
+sphinx-rtd-theme
