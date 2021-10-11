@@ -8,15 +8,23 @@ Welcome to Eye Disease Detection's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Introduction
+   :name: starthere
 
-   test/template
+   starthere/requirements
+   starthere/files_description
+   starthere/how_to_run
 
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Core API
+   :name: core
 
-Indices and tables
-==================
+   core/base
+   core/VGG16
+   core/VGG19
+   core/ResnetV2
+   core/InceptionV3
+   core/Xception
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
