@@ -1,7 +1,6 @@
 import os
 import argparse
 import tensorflow as tf
-from tensorflow.keras.applications.vgg16 import preprocess_input
 import glob
 import cv2
 from tqdm import tqdm
@@ -10,7 +9,7 @@ import pandas as pd
 import mlflow
 
 from eye.models.vgg16 import Vgg16
-from eye.utils.utils import pprint_metrics, calc_metrics, load_data
+from eye.utils.utils import pprint_metrics, calc_metrics
 from eye.utils import plotter_utils as p
 from eye.data.transforms import (
     Compose,
@@ -139,7 +138,7 @@ def main():
         Y_test2_ls.append(Y_test_ls[-1])
 
     # change directory from Data to main directory
-    os.chdir("../app")
+    os.chdir("/usr/src/app")
 
     img_shape = (len(X_test_ls),) + (X_test_ls[0].shape)
     label_shape = (len(Y_test_ls),) + (Y_test_ls[0].shape[1],)
