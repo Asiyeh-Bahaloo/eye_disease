@@ -121,6 +121,8 @@ def specificity(y_true, y_pred):
     """
     tn = K.sum(K.round(K.clip((1 - y_true) * (1 - y_pred), 0, 1)))
     fp = K.sum(K.round(K.clip((1 - y_true) * y_pred, 0, 1)))
+    fp = tf.cast(fp, tf.float32)
+    tn = tf.cast(tn, tf.float32)
     return tn / (tn + fp + K.epsilon())
 
 
