@@ -1,3 +1,4 @@
+from typing import Tuple
 import pandas as pd
 import os
 import cv2
@@ -12,11 +13,13 @@ class ODIR_Dataset:
     def __init__(
         self,
         img_folder_path,
-        csv_path,
         img_shape,
         num_classes,
         frac,
         transforms,
+        csv_path=None,
+        dataframe=None,
+        random_state=2021,
     ):
         """
         Initializer for the ODIR_dataset class.
@@ -26,7 +29,10 @@ class ODIR_Dataset:
         img_folder_path : str
             Direct path to the FOLDER contating the images.
         csv_path : str
-            Direct path to the CSV FILE contating the labels.
+            Direct path to the CSV FILE contating the labels(train, val).
+        dataframe : pandas.DataFrame
+            Two DataFrames given in a tuple that contains the labels of our images(train, val).
+            or just one DataFrame that represents the train or val sets.
         img_shape : tuple
             a 2D tuple that shows the each image shape. (e.g. (224, 224))
         num_classes : int
@@ -35,13 +41,50 @@ class ODIR_Dataset:
             Number to set the fraction of data you want to consider.
         transforms: Compose object
             Object of the Compose class that contains all the transform you want to use.
+        random_state : int
+            random_state used during this function
         """
+
         self.img_folder_path = img_folder_path
         self.img_shape = img_shape
         self.num_classes = num_classes
-        self.df = pd.read_csv(csv_path)
-        self.df = self.df.sample(frac=frac).reset_index(drop=True)
+        self.frac = frac
         self.transforms = transforms
+
+        if not (csv_path is None):
+            self.df = pd.read_csv(csv_path)
+            self.df = self.df.sample(frac=frac, random_state=random_state).reset_index(
+                drop=True
+            )
+        elif isinstance(dataframe, pd.DataFrame):
+            self.df = dataframe.sample(
+                frac=frac, random_state=random_state
+            ).reset_index(drop=True)
+        else:
+            print("Dataframe format isn't correct")
+
+    def subset(self, dataframe):
+        """
+        This function return object of the ODIR_Dataset related to the set you asked (train set or validation set)
+
+        Parameters
+        ----------
+        dataframe : pd.DataFrame
+            DataFrame that includes the mapping of labels for images.
+
+        Returns
+        -------
+        ODIR_Dataset object
+            ODIR_Dataset object of the asked portion.
+        """
+        return type(self)(
+            img_folder_path=self.img_folder_path,
+            dataframe=dataframe,
+            img_shape=self.img_shape,
+            num_classes=self.num_classes,
+            frac=self.frac,
+            transforms=self.transforms,
+        )
 
     def __len__(self):
         """
@@ -143,21 +186,23 @@ class Cataract_Dataset:
     def __init__(
         self,
         img_folder_path,
-        csv_path,
         img_shape,
         num_classes,
         frac,
         transforms,
+        dataframe=None,
+        random_state=2021,
     ):
         """
-        Initializer for the ODIR_dataset class.
+        Initializer for the Cataract_dataset class.
 
         Parameters
         ----------
         img_folder_path : str
             Direct path to the FOLDER contating the images.
-        csv_path : str
-            Direct path to the CSV FILE contating the labels.
+        dataframe : pandas.DataFrame
+            Two DataFrames given in a tuple that contains the labels of our images(train, val).
+            or just one DataFrame that represents the train or val sets.
         img_shape : tuple
             a 2D tuple that shows the each image shape. (e.g. (224, 224))
         num_classes : int
@@ -166,13 +211,43 @@ class Cataract_Dataset:
             Number to set the fraction of data you want to consider.
         transforms: Compose object
             Object of the Compose class that contains all the transform you want to use.
+        random_state : int
+            random_state used during this function
         """
+
         self.img_folder_path = img_folder_path
         self.img_shape = img_shape
         self.num_classes = num_classes
-        self.df = pd.read_csv(csv_path)
-        self.df = self.df.sample(frac=frac).reset_index(drop=True)
+        self.frac = frac
         self.transforms = transforms
+
+        if isinstance(dataframe, pd.DataFrame):
+            self.df = dataframe.sample(
+                frac=frac, random_state=random_state
+            ).reset_index(drop=True)
+
+    def subset(self, dataframe):
+        """
+        This function return object of the Cataract_Dataset related to the set you asked (train set or validation set)
+
+        Parameters
+        ----------
+        dataframe : pd.DataFrame
+            DataFrame that includes the mapping of labels for images.
+
+        Returns
+        -------
+        Cataract_Dataset object
+            Cataract_Dataset object of the asked portion.
+        """
+        return type(self)(
+            img_folder_path=self.img_folder_path,
+            dataframe=dataframe,
+            img_shape=self.img_shape,
+            num_classes=self.num_classes,
+            frac=self.frac,
+            transforms=self.transforms,
+        )
 
     def __len__(self):
         """
@@ -199,7 +274,16 @@ class Cataract_Dataset:
         image, label
             wanted image and its label.
         """
-        path = os.path.join(self.img_folder_path, image_id)
+        if image_id.find("NL") > -1:
+            path_image_folder = "1_normal"
+        elif image_id.find("cataract") > -1:
+            path_image_folder = "2_cataract"
+        elif image_id.find("Glaucoma") > -1:
+            path_image_folder = "2_glaucoma"
+        elif image_id.find("Retina") > -1:
+            path_image_folder = "3_retina_disease"
+
+        path = os.path.join(self.img_folder_path, path_image_folder, image_id)
         img = cv2.imread(path)
         img = self.transforms(img)
 
@@ -228,7 +312,16 @@ class Cataract_Dataset:
             preprocessed image.
         """
 
-        path = os.path.join(self.img_folder_path, image_id)
+        if image_id.find("NL") > -1:
+            path_image_folder = "1_normal"
+        elif image_id.find("cataract") > -1:
+            path_image_folder = "2_cataract"
+        elif image_id.find("Glaucoma") > -1:
+            path_image_folder = "2_glaucoma"
+        elif image_id.find("Retina") > -1:
+            path_image_folder = "3_retina_disease"
+
+        path = os.path.join(self.img_folder_path, path_image_folder, image_id)
         img = cv2.imread(path)
         img = self.transforms(img)
         return img

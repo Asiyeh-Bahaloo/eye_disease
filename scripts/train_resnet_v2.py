@@ -1,12 +1,13 @@
 import os
 import argparse
 import mlflow
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
 
 from eye.models.resnet_v2 import ResnetV2
 from eye.utils import plotter_utils as p
-from eye.utils.utils import MlflowCallback
+from eye.utils.utils import MlflowCallback, split_ODIR
 from eye.data.dataloader import ODIR_Dataloader
 from eye.data.dataset import ODIR_Dataset
 from eye.data.transforms import (
@@ -92,20 +93,11 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--train_label",
-        dest="train_label_file",
+        "--tv_label",
+        dest="train_val_path",
         type=str,
-        default="/Data/train_labels.csv",
-        help="Path to the train input labels file (.csv)",
-        required=True,
-    )
-
-    parser.add_argument(
-        "--val_label",
-        dest="val_label_file",
-        type=str,
-        default="/Data/val_labels.csv",
-        help="Path to the val input labels file (.csv)",
+        default="/Data",
+        help="Path to the .csv file of train, val labels.",
         required=True,
     )
 
@@ -163,48 +155,33 @@ def main():
     mlflow.set_tag("mlflow.runName", tag)
 
     # create compose for both train and validation sets
-    compose_train = Compose(
+    compose = Compose(
         transforms=[
             RemovePadding(),
             BenGraham(350),
             Resize((224, 224), False),
-            KerasPreprocess(model_name="resnet"),
+            KerasPreprocess(model_name="vgg16"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
         ]
     )
 
-    compose_val = Compose(
-        transforms=[
-            RemovePadding(),
-            # BenGraham(350),
-            Resize((224, 224), False),
-            KerasPreprocess(model_name="resnet"),
-            # RandomShift(0.2, 0.3),
-            # RandomFlipLR(),
-            # RandomFlipUD(),
-        ]
+    # split data
+    (df_train, df_val) = split_ODIR(
+        path_train_val=args.train_val_path, train_val_frac=0.8
     )
-
     # create both train and validation sets
-    train_dataset = ODIR_Dataset(
+    ODIR_dataset = ODIR_Dataset(
         img_folder_path=args.data_folder,
-        csv_path=args.train_label_file,
+        csv_path=args.train_val_path,
         img_shape=(224, 224),
         num_classes=8,
-        frac=0.01,
-        transforms=compose_train,
+        frac=0.001,
+        transforms=compose,
     )
-
-    val_dataset = ODIR_Dataset(
-        img_folder_path=args.data_folder,
-        csv_path=args.val_label_file,
-        img_shape=(224, 224),
-        num_classes=8,
-        frac=0.01,
-        transforms=compose_val,
-    )
+    train_dataset = ODIR_dataset.subset(df_train)
+    val_dataset = ODIR_dataset.subset(df_val)
 
     # create both train and validation dataloaders
     train_DL = ODIR_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
@@ -219,9 +196,11 @@ def main():
         model.load_weights(path=args.weights_path)
 
     # model trainable and non-trainable parameters
-    trainableParams = np.sum([np.prod(v.get_shape()) for v in model.trainable_weights])
+    trainableParams = np.sum(
+        [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+    )
     nonTrainableParams = np.sum(
-        [np.prod(v.get_shape()) for v in model.non_trainable_weights]
+        [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
     )
     totalParams = trainableParams + nonTrainableParams
 

@@ -2,6 +2,8 @@ import os
 import mlflow
 import tensorflow as tf
 import numpy as np
+import pandas as pd
+import math
 import yaml
 import csv
 import matplotlib.pyplot as plt
@@ -259,3 +261,82 @@ def find_similar_images(indices, filenames, result_folder):
             )
             plotnumber += 1
     plt.tight_layout()
+
+
+def split_ODIR(path_train_val, train_val_frac=0.8, random_state=2021):
+    """
+    This function splits and returns train, val dataframes of ODIR dataset.
+
+    Parameters
+    ----------
+    path_train_val : str
+        path to the .csv file contains the label mapping for train, val sections.
+    train_val_frac : float, optional
+        fraction you want to use in train, val split, by default 0.8
+    random_state : int, optional
+        random_state used during this function, by default 2021
+
+    Returns
+    -------
+    Tuple of Two DataFrames
+        (df_train, df_val)
+    """
+
+    df = (
+        pd.read_csv(path_train_val)
+        .sample(frac=1, random_state=random_state)
+        .reset_index(drop=True)
+    )
+
+    split_point = math.ceil(train_val_frac * len(df))
+    df_train = df[:split_point].reset_index(drop=True)
+    df_val = df[split_point:].reset_index(drop=True)
+
+    return (df_train, df_val)
+
+
+def split_Cataract(Image_path, train_val_frac=0.8, random_state=2021):
+    """
+    This function splits and returns train, val dataframes of Cataract dataset.
+
+    Parameters
+    ----------
+    Image_path : str
+        Path to the image folder of the cataract dataset. this folder must have 4 folders in it:
+        - 1_normal
+        - 2_cataract
+        - 2_glaucoma
+        - 3_retina_disease
+    train_val_frac : float, optional
+        fraction you want to use in train, val split, by default 0.8
+    random_state : int, optional
+        random_state used during this function, by default 2021
+
+    Returns
+    -------
+    Tuple of Two DataFrames
+        (df_train, df_val)
+    """
+
+    df = pd.DataFrame(columns=["ID", "normal", "cataract", "glaucoma", "others"])
+
+    for idx1, filename in enumerate(os.listdir(os.path.join(Image_path, "1_normal"))):
+        df.loc[idx1] = [filename, 1, 0, 0, 0]
+    for idx2, filename in enumerate(os.listdir(os.path.join(Image_path, "2_cataract"))):
+        df.loc[idx2 + idx1 + 1] = [filename, 0, 1, 0, 0]
+    for idx3, filename in enumerate(os.listdir(os.path.join(Image_path, "2_glaucoma"))):
+        df.loc[idx3 + idx2 + idx1 + 2] = [filename, 0, 0, 1, 0]
+    for idx4, filename in enumerate(
+        os.listdir(os.path.join(Image_path, "3_retina_disease"))
+    ):
+        df.loc[idx4 + idx3 + idx2 + idx1 + 3] = [filename, 0, 0, 0, 1]
+
+    # shuffle dataset
+    df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
+
+    split_point = math.ceil(train_val_frac * len(df))
+
+    df_train = df[:split_point].reset_index(drop=True)
+    df_val = df[split_point:].reset_index(drop=True)
+
+    return (df_train, df_val)
