@@ -83,3 +83,4 @@ cython_debug/
 mlruns/
 .data/
 .result/
+.env.dev
