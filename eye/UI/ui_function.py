@@ -1,16 +1,8 @@
-import sys
-import os
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
-
-
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(os.path.dirname(currentdir))
-sys.path.append(parentdir)
-
 import streamlit as st
 
-from eye.utils.utils import load_data
+
 from eye.models.vgg16 import Vgg16
 from eye.models.vgg19 import Vgg19
 from eye.models.xception import Xception

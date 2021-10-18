@@ -81,6 +81,6 @@ dmypy.json
 .pytype/
 cython_debug/
 mlruns/
-.data/
 .result/
 .env.dev
+experiments/
