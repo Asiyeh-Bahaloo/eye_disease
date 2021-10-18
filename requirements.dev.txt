@@ -18,3 +18,12 @@ scikit-image
 opencv-python
 tqdm
 sphinx-rtd-theme
+torch
+torchvision
+pillow==8.2.0
+
+
+
+
+
+

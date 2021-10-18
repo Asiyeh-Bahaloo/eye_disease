@@ -1,14 +1,8 @@
-import os
 import tensorflow as tf
-from tensorflow.keras.optimizers import SGD
 import streamlit as st
 
+
 from eye.utils.utils import load_data
-from eye.models.vgg16 import Vgg16
-from eye.models.vgg19 import Vgg19
-from eye.models.xception import Xception
-from eye.models.resnet_v2 import ResnetV2
-from eye.models.inception_v3 import InceptionV3
 from eye.UI.ui_function import (
     set_model_architecture,
     set_weight,
@@ -16,10 +10,15 @@ from eye.UI.ui_function import (
 )
 
 
-def app():
-    """app this function used for running home page of ui
+def app(data_path):
+    """app "app this function used for running home page of ui
 
-    in the main app when you want to diaplay home page you must call this function
+     in the main app when you want to diaplay home page you must call this function
+
+    Parameters
+    ----------
+    data_path : str
+        path of dataset
 
     Returns
     -------
@@ -31,9 +30,7 @@ def app():
         if you do not biuld and train the model the function return None
     """
 
-    (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_data(
-        r"/usr/src/app/Data"
-    )
+    (x_train, y_train), (x_val, y_val), (x_test, y_test) = load_data(data_path)
 
     header = st.container()
     dataset = st.container()

@@ -7,6 +7,7 @@ import streamlit as st
 
 from eye.evaluation.metrics import get_specific_metrics
 
+
 def plot_metrics(history, path):
     """
     This functions plots your defined metrics based on the history you give in the inputs.
@@ -462,11 +463,10 @@ def plot_image_in_UI(pred, image, class_names):
         list of name of each class
     """
 
-    for i in range(len(image)):
-        # show image in page
-        st.image(image[i])
+    for t in range(len(image)):
+
         # indicate the 3 most possible label
-        first, second, third, i, j, k = calculate_3_largest(np.transpose(pred[i]), 8)
+        first, second, third, i, j, k = calculate_3_largest(np.transpose(pred[t]), 8)
         # indicate which label is greater than 0.5 and filter them
         prediction = "{} {:2.0f}% \n".format(class_names[i], 100 * first)
         if second >= 0.5:
@@ -478,10 +478,24 @@ def plot_image_in_UI(pred, image, class_names):
                 class_names[k], 100 * third
             )
         # write the most possible label below the image
+        st.image(image[t])
         st.write("Predicted: {}".format(prediction))
 
 
-def multi_label_roc(output_path, y_true, y_pred,labels_list = ['Normal', 'Diabetes', 'Glaucoma','Cataract', 'AMD',  'Hypertension', 'Myopia',]):
+def multi_label_roc(
+    output_path,
+    y_true,
+    y_pred,
+    labels_list=[
+        "Normal",
+        "Diabetes",
+        "Glaucoma",
+        "Cataract",
+        "AMD",
+        "Hypertension",
+        "Myopia",
+    ],
+):
     """multi_label_roc plot roc for each label
 
     Parameters
@@ -496,22 +510,26 @@ def multi_label_roc(output_path, y_true, y_pred,labels_list = ['Normal', 'Diabet
         list of the label will be plot, by default ['Normal', 'Diabetes', 'Glaucoma','Cataract', 'AMD',  'Hypertension', 'Myopia',]
     """
     y_true, y_pred = np.array(y_true), np.array(y_pred)
-    y_pred = (y_pred.argmax(1)[:,None] == np.arange(y_pred.shape[1])).astype(int)
+    y_pred = (y_pred.argmax(1)[:, None] == np.arange(y_pred.shape[1])).astype(int)
 
     for cls in range(len(labels_list)):
-        fpr, tpr, _ = roc_curve(y_true[:,cls], y_pred[:,cls])
+        fpr, tpr, _ = roc_curve(y_true[:, cls], y_pred[:, cls])
 
-        plt.plot(100 * fpr, 100 * tpr, label=labels_list[cls], linewidth=2,)
-    plt.xlabel('False positives [%]')
-    plt.ylabel('True positives [%]')
+        plt.plot(
+            100 * fpr,
+            100 * tpr,
+            label=labels_list[cls],
+            linewidth=2,
+        )
+    plt.xlabel("False positives [%]")
+    plt.ylabel("True positives [%]")
     plt.grid(True)
     ax = plt.gca()
-    ax.set_aspect('equal')
-    plt.legend(loc='lower right')
-    plt.savefig(output_path+  '.png')
-    # plt.show()  
+    ax.set_aspect("equal")
+    plt.legend(loc="lower right")
+    plt.savefig(output_path + ".png")
+    # plt.show()
     plt.close()
-
 
 
 def model_compare(x_test, y_test, models, tags, output_path, metrics, loss):
@@ -530,21 +548,23 @@ def model_compare(x_test, y_test, models, tags, output_path, metrics, loss):
     path : str
         path and name the graph to be saved
     metrics : list, optional
-        the metrics for comparing models, 
+        the metrics for comparing models,
     loss : keras.loss or str
-        loss function to evaluate models        
+        loss function to evaluate models
     """
     tag_idx = 0
     for model in models:
-        calculated_metrics, metrics_names = get_specific_metrics(x_test,y_test,model, metrics, loss)
+        calculated_metrics, metrics_names = get_specific_metrics(
+            x_test, y_test, model, metrics, loss
+        )
         y = calculated_metrics
         x = metrics_names
         plt.plot(x, y, label=tags[tag_idx])
-        tag_idx +=1
+        tag_idx += 1
         labels = metrics_names
-        plt.xticks(x, labels, rotation='vertical')
+        plt.xticks(x, labels, rotation="vertical")
         plt.margins(0.2)
         plt.subplots_adjust(bottom=0.15)
     plt.legend()
     # plt.show()
-    plt.savefig(output_path +  '.png')
+    plt.savefig(output_path + ".png")
