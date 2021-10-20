@@ -205,6 +205,8 @@ class MlflowCallback(tf.keras.callbacks.Callback):
         mlflow.log_metric("val_recall", logs["val_recall"], step=epoch)
         mlflow.log_metric("auc", logs["auc"], step=epoch)
         mlflow.log_metric("val_auc", logs["val_auc"], step=epoch)
+        mlflow.log_metric("specificity", logs["specificity"], step=epoch)
+        mlflow.log_metric("val_specificity", logs["val_specificity"], step=epoch)
 
         metrics = [
             "loss",
@@ -216,7 +218,6 @@ class MlflowCallback(tf.keras.callbacks.Callback):
             "auc",
             "final",
             "specificity",
-            "sensitivity",
         ]
         labels = ["N", "D", "G", "C", "A", "H", "M", "O"]
 

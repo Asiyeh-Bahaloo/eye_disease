@@ -22,6 +22,7 @@ from eye.evaluation.metrics import (
     final_per_class,
     specificity_per_class,
     sensitivity_per_class,
+    specificity,
 )
 from eye.data.transforms import (
     Compose,
@@ -154,6 +155,7 @@ def main():
         tf.keras.metrics.Precision(name="precision"),
         tf.keras.metrics.Recall(name="recall"),
         tf.keras.metrics.AUC(name="auc"),
+        specificity,
     ]
 
     for l in range(num_classes):
@@ -166,7 +168,7 @@ def main():
         defined_metrics.append(auc_per_class(label=l))
         defined_metrics.append(final_per_class(label=l))
         defined_metrics.append(specificity_per_class(label=l))
-        defined_metrics.append(sensitivity_per_class(label=l))
+        # defined_metrics.append(sensitivity_per_class(label=l))
 
     # Model
     model = Xception(num_classes=num_classes)
