@@ -1,6 +1,8 @@
+from numpy import mean
 from sklearn import metrics
+from sklearn.metrics import precision_score, recall_score, multilabel_confusion_matrix, roc_auc_score, f1_score
 from keras import backend as K
-from tensorflow.keras.losses import BinaryCrossentropy
+# from tensorflow.keras.losses import BinaryCrossentropy
 import tensorflow as tf
 import numpy as np
 
@@ -488,3 +490,109 @@ def loss_per_class(label):
 
     loss_per_label.__name__ = f"lossForLabel{class_names[label]}"
     return loss_per_label
+
+
+def macro_precision(y_true, y_pred):
+    """
+           calculates precision of each labels and returns mean of them
+       Parameters
+       ----------
+       y_true : list of floats or ndarray
+           true labels
+       y_pred : lost of floats or ndarray
+           predicted labels
+
+       Returns
+       -------
+       recall: float
+           precision with average of 'macro'
+       """
+    return precision_score(y_true, y_pred, 0.5, average='macro')
+
+
+def macro_recall(y_true, y_pred):
+    """
+        calculates recall of each labels and returns mean of them
+    Parameters
+    ----------
+    y_true : list of floats or ndarray
+        true labels
+    y_pred : lost of floats or ndarray
+        predicted labels
+
+    Returns
+    -------
+    recall: float
+        recall with average of 'macro'
+    """
+    return recall_score(y_true, y_pred, threshold=0.5, average='macro')
+
+
+def macro_specificity(y_true, y_pred):
+    """
+    gets multilabel y_true and y_pred  and calculate specificity for each label
+    and returns mean of them.
+
+    Parameters
+    ----------
+    y_true: list of floats of numpy.ndarray
+        true labels
+    y_pred: list of floats of numpy.ndarray
+        predicted labels
+    Returns
+    -------
+    macro_specificity: float
+       mean of specificities of each label
+    """
+    y_true = np.array(y_true)
+    y_true = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
+    y_pred = np.array(y_pred)
+    y_pred = (y_pred == y_pred.max(axis=1, keepdims=True)).astype(int)
+    confusion_matrices = multilabel_confusion_matrix(y_true, y_pred, )
+    specificities = []
+    for cm in confusion_matrices:
+        tn, fp, fn, tp = cm.ravel()
+        specificity = float(tn / (tn + fp)) if (tn + fp) != 0 else 0
+        specificities.append(specificity)
+
+    return mean(specificities)
+
+
+def macro_auc(y_true, y_pred):
+    """
+    calculates auc with average of "macro"
+    Parameters
+    ----------
+    y_true:list of floats or ndarray
+        true labels
+    y_pred: list of floats or ndarray
+        predicted labels
+
+    Returns
+    -------
+    auc:float
+        auc with average of "macro"
+    """
+    y_true = np.array(y_true)
+    y_true = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
+    y_pred = np.array(y_pred)
+    y_pred = (y_pred == y_pred.max(axis=1, keepdims=True)).astype(int)
+
+    return roc_auc_score(y_true, y_pred, average='macro')
+
+
+def macro_f1_score(y_true, y_pred):
+    """
+        calculates f1 for each label and returns mean of them
+    Parameters
+    ----------
+    y_true : list of floats or ndarray
+        true labels
+    y_pred : list of floats or ndarray
+        predicted labels
+    Returns
+    -------
+    f1:float
+        f1_score with average of 'macro'
+    """
+    return f1_score(y_true, y_pred, threshold=0.5, average='macro')
