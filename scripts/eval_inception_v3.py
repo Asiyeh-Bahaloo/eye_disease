@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from eye.models.inception_v3 import InceptionV3
-from eye.utils.utils import pprint_metrics, calc_metrics
+from eye.utils.utils import pprint_metrics, calc_metrics, add_args_to_mlflow
 from eye.utils import plotter_utils as p
 from eye.evaluation.metrics import (
     loss_per_class,
@@ -89,7 +89,7 @@ def parse_arguments():
         default="Default",
         help="setting the experiment under which mlflow must be logged",
     )
-    
+
     parser.add_argument(
         "--bg_scale",
         dest="bengraham_scale",
@@ -180,10 +180,8 @@ def main():
     Y_test = np.stack(Y_test_ls, axis=0).reshape(label_shape)
     Y_test2 = np.stack(Y_test2_ls, axis=0).reshape(label2_shape)
 
+    add_args_to_mlflow(args)
     mlflow.log_param("Test data size", X_test.shape[0])
-    mlflow.log_param("BenGrahamScale", args.bengraham_scale)
-    mlflow.log_param("Image shape", args.shape)
-    mlflow.log_param("Keeping aspect ratio", args.keepAspectRatio)
 
     # Metrics
     defined_metrics = [

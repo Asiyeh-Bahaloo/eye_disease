@@ -7,7 +7,7 @@ from tensorflow.keras.optimizers import SGD
 
 from eye.models.inception_v3 import InceptionV3
 from eye.utils import plotter_utils as p
-from eye.utils.utils import MlflowCallback, split_ODIR
+from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 from eye.data.dataloader import ODIR_Dataloader
 from eye.data.dataset import ODIR_Dataset
 from eye.data.transforms import (
@@ -214,7 +214,7 @@ def parse_arguments():
     return args
 
 
-# python scripts/train_inception_v3.py --batch=8 --epoch=2 --imgnetweights=True --data=../Data --tv_label=../Data/Train_val_labels.csv --result=../Results --exp==Default
+# python scripts/train_inception_v3.py --batch=8 --epoch=2 --imgnetweights=True --data=../Data --data_frac=0.001 --tv_label=../Data/Train_val_labels.csv --result=../Results --exp==Default
 def main():
     args = parse_arguments()
     tf.config.run_functions_eagerly(True)
@@ -278,23 +278,12 @@ def main():
     )
     totalParams = trainableParams + nonTrainableParams
 
-    mlflow.log_param("Batch size", args.batch_size)
-    mlflow.log_param("Epochs", args.epochs)
-    mlflow.log_param("Patience", args.patience)
-    mlflow.log_param("Loss", args.loss)
-    mlflow.log_param("Learning rate", args.lr)
+    add_args_to_mlflow(args)
     mlflow.log_param("Training data size", len(train_dataset))
     mlflow.log_param("Validation data size", len(val_dataset))
     mlflow.log_param("Total params", totalParams)
     mlflow.log_param("Trainable params", trainableParams)
     mlflow.log_param("Non-trainable params", nonTrainableParams)
-    mlflow.log_param("BenGrahamScale", args.bengraham_scale)
-    mlflow.log_param("Image shape", args.shape)
-    mlflow.log_param("Keeping aspect ratio", args.keepAspectRatio)
-    mlflow.log_param("Fraction of the data", args.data_fraction)
-    mlflow.log_param("Early Stopping mode", args.early_stopping_mode)
-    mlflow.log_param("Early Stopping monitor", args.early_stopping_monitor)
-    mlflow.log_param("Early Stopping verbose", args.early_stopping_verbose)
 
     # Optimizer
     # TODO: Define multiple optimizer
