@@ -82,12 +82,43 @@ def parse_arguments():
         help="type of loss function with which you want to compile your model",
         required=False,
     )
+    parser.add_argument(
+        "--exp",
+        dest="experiment",
+        type=str,
+        default="Default",
+        help="setting the experiment under which mlflow must be logged",
+    )
+    
+    parser.add_argument(
+        "--bg_scale",
+        dest="bengraham_scale",
+        type=int,
+        default=350,
+        help="setting the scale for BenGraham transform",
+    )
+
+    parser.add_argument(
+        "--shape",
+        dest="shape",
+        type=int,
+        default=224,
+        help="setting shape of image for resize transform",
+    )
+
+    parser.add_argument(
+        "--keep_AR",
+        dest="keepAspectRatio",
+        type=bool,
+        default=False,
+        help="whether to keep aspect ratio for resize transform or not",
+    )
 
     args = parser.parse_args()
     return args
 
 
-# python eye/scripts/eval_inception_v3.py --weights=./Data/model_weights_inception_v3.h5 --data=./Data --result=./Data
+# python scripts/eval_inception_v3.py --weights=../Weights/model_weights_inception_v3.h5 --data=../Data --label=../Data/test_labels.csv --result=../Results --exp=Evaluations
 def main():
     args = parse_arguments()
     tf.config.run_functions_eagerly(True)
@@ -96,6 +127,7 @@ def main():
     num_classes = 8
     tag = "inception_v3"
 
+    mlflow.set_experiment(args.experiment)
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", tag)
 
@@ -103,8 +135,8 @@ def main():
     compose_test = Compose(
         transforms=[
             RemovePadding(),
-            # BenGraham(350),
-            Resize((224, 224), False),
+            # BenGraham(args.bengraham_scale),
+            Resize((args.shape, args.shape), args.keepAspectRatio),
             KerasPreprocess(model_name="inception"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
@@ -149,6 +181,9 @@ def main():
     Y_test2 = np.stack(Y_test2_ls, axis=0).reshape(label2_shape)
 
     mlflow.log_param("Test data size", X_test.shape[0])
+    mlflow.log_param("BenGrahamScale", args.bengraham_scale)
+    mlflow.log_param("Image shape", args.shape)
+    mlflow.log_param("Keeping aspect ratio", args.keepAspectRatio)
 
     # Metrics
     defined_metrics = [
