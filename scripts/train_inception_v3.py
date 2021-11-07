@@ -4,6 +4,11 @@ import mlflow
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.optimizers.schedules import (
+    ExponentialDecay,
+    CosineDecay,
+    InverseTimeDecay,
+)
 
 from eye.models.inception_v3 import InceptionV3
 from eye.utils import plotter_utils as p
@@ -113,10 +118,31 @@ def parse_arguments():
     )
     parser.add_argument(
         "--learning_rate",
-        dest="lr",
+        dest="lr_init",
         type=float,
         default=0.001,
         help="setting learning rate of optimizer",
+    )
+    parser.add_argument(
+        "--LR_type",
+        dest="lr_type",
+        type=str,
+        default="ED",
+        help="Type of the LR scheduler you want to use. It can be 'ED':ExponentialDecay | 'CD': CosineDecay | 'ITD': InverseTimeDecay",
+    )
+    parser.add_argument(
+        "--LR_decay_rate",
+        dest="LR_decay",
+        type=float,
+        default=0.95,
+        help="setting decay rate of Learning Rate Schedule.",
+    )
+    parser.add_argument(
+        "--LR_decay_step",
+        dest="decay_step",
+        type=float,
+        default=50,
+        help="setting decay step of Learning Rate Schedule.",
     )
     parser.add_argument(
         "--decay_rate",
@@ -219,10 +245,32 @@ def main():
     mlflow.log_param("Trainable params", trainableParams)
     mlflow.log_param("Non-trainable params", nonTrainableParams)
 
+    # Set Schedules for LR
+    if args.lr_type == "ED":
+        LR_schedule = ExponentialDecay(
+            initial_learning_rate=args.lr_init,
+            decay_steps=args.decay_step,
+            decay_rate=args.LR_decay,
+            staircase=True,
+        )
+    elif args.lr_type == "CD":
+        LR_schedule = CosineDecay(
+            initial_learning_rate=args.lr_init, decay_steps=args.decay_step
+        )
+    elif args.lr_type == "ITD":
+        LR_schedule = InverseTimeDecay(
+            initial_learning_rate=args.lr_init,
+            decay_steps=args.decay_step,
+            decay_rate=args.LR_decay,
+            staircase=True,
+        )
+    else:
+        print("Learning Rate Schedule Type is incorrect.")
+
     # Optimizer
     # TODO: Define multiple optimizer
     sgd = SGD(
-        lr=args.lr, decay=args.decay, momentum=args.momentum, nesterov=args.nesterov
+        lr=LR_schedule, decay=args.decay, momentum=args.momentum, nesterov=args.nesterov
     )
 
     # Metrics
