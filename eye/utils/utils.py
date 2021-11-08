@@ -341,3 +341,20 @@ def split_Cataract(Image_path, train_val_frac=0.8, random_state=2021):
     df_val = df[split_point:].reset_index(drop=True)
 
     return (df_train, df_val)
+
+
+def add_args_to_mlflow(args):
+    """
+    This function logs all arguments of argparse in the mlflow.
+
+    Parameters
+    ----------
+    args : Namespace
+        a namespace containing the arguments of argparse
+        
+    Returns
+    -------
+    logs each argument in the mlflow
+    """
+    for arg in args.__dict__:
+        mlflow.log_param(arg, args.__dict__[arg])
