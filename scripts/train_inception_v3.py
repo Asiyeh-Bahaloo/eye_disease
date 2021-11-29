@@ -367,12 +367,22 @@ def main():
         verbose=args.early_stopping_verbose,
     )
 
+    model_file = os.path.join(args.result, f"model_weights_{tag}.h5")
+    modelCheckpoint = tf.keras.callbacks.ModelCheckpoint(
+        model_file,
+        save_best_only=True,
+        save_weights_only=False,
+        verbose=1,
+        mode="min",
+        monitor="val_loss",
+    )
+
     # Train
     history = model.train(
         epochs=args.epochs,
         loss=args.loss,
         metrics=metrics,
-        callbacks=[MlflowCallback(), earlyStoppingCallback],
+        callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
         optimizer=sgd,
         train_data_loader=train_DL,
         validation_data_loader=val_DL,
@@ -383,9 +393,6 @@ def main():
     print("model trained successfuly.")
 
     # Save
-    print("Saving models weights...")
-    model_file = os.path.join(args.result, f"model_weights_{tag}.h5")
-    model.save(model_file)
     mlflow.log_artifact(model_file)
     print(f"Saved model weights in {model_file}")
 
