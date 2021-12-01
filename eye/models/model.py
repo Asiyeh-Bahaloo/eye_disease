@@ -92,6 +92,7 @@ class KerasClsBaseModel(BaseModel):
         metrics,
         callbacks=[],
         optimizer=Adam(),
+        freeze_backbone=True,
         train_data_loader=None,
         validation_data_loader=None,
         X=None,
@@ -113,6 +114,8 @@ class KerasClsBaseModel(BaseModel):
             functions that will execute after each eochs, by default []
         optimizer : keras.optimizer, optional
             optimizer method to optimize learning process, by default Adam()
+        freeze_backbone : bool, optional
+            Boolian to set if you want to freeze the backbone or not.
         train_data_loader : keras data generator, optional
             data loader to give training data sectional, by default None
         validation_data_loader : [type], optional
@@ -131,7 +134,17 @@ class KerasClsBaseModel(BaseModel):
             metrics to describe model performance, by default ...
 
         """
+
+        model_layers = self.model.layers
+        for l in model_layers[:-2]:
+            if freeze_backbone:
+                l.trainable = False
+            else:
+                l.trainable = True
+
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+        # print(self.model.summary())
+
         if train_data_loader == None:
             history = self.model.fit(
                 x=X,

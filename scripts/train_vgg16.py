@@ -234,6 +234,13 @@ def parse_arguments():
         default=1,
         help="setting the verbose of early stopping callback",
     )
+    parser.add_argument(
+        "--Fine_Tuning",
+        dest="Fine_Tuning",
+        type=bool,
+        default=True,
+        help="set if you want to fine tune the model or not.",
+    )
     args = parser.parse_args()
     return args
 
@@ -375,6 +382,21 @@ def main():
         mode="min",
         monitor="val_loss",
     )
+    if args.Fine_Tuning:
+        history = model.train(
+            epochs=args.epochs,
+            loss=args.loss,
+            metrics=metrics,
+            callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
+            optimizer=sgd,
+            freeze_backbone=True,
+            train_data_loader=train_DL,
+            validation_data_loader=val_DL,
+            batch_size=args.batch_size,
+            steps_per_epoch=len(train_DL),
+            shuffle=True,
+        )
+        print("model trained successfuly(Backbone freezed).")
 
     # Train
     history = model.train(
@@ -383,6 +405,7 @@ def main():
         metrics=metrics,
         callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
         optimizer=sgd,
+        freeze_backbone=False,
         train_data_loader=train_DL,
         validation_data_loader=val_DL,
         batch_size=args.batch_size,
