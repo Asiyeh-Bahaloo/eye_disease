@@ -335,7 +335,10 @@ def main():
     # Optimizer
     # TODO: Define multiple optimizer
     sgd = SGD(
-        lr=LR_schedule, decay=args.decay, momentum=args.momentum, nesterov=args.nesterov
+        learning_rate=LR_schedule,
+        decay=args.decay,
+        momentum=args.momentum,
+        nesterov=args.nesterov,
     )
 
     # Metrics
