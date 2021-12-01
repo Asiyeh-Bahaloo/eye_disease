@@ -4,10 +4,20 @@ import mlflow
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.optimizers.schedules import (
+    ExponentialDecay,
+    CosineDecay,
+    InverseTimeDecay,
+)
 
 from eye.models.vgg16 import Vgg16
 from eye.utils import plotter_utils as p
-from eye.utils.utils import MlflowCallback, split_ODIR, split_Cataract
+from eye.utils.utils import (
+    MlflowCallback,
+    split_ODIR,
+    split_Cataract,
+    add_args_to_mlflow,
+)
 from eye.data.dataloader import Mix_Dataloader
 from eye.data.dataset import ODIR_Dataset, Cataract_Dataset
 from eye.data.transforms import (
@@ -71,9 +81,10 @@ def parse_arguments():
     )
     parser.add_argument(
         "--imgnetweights",
-        dest="imagenet_weights_path",
-        type=str,
-        help="Path to the image net pretrained weights file",
+        dest="imagenet_weights",
+        type=bool,
+        default=True,
+        help="determines to load imagenet pretrained weight or not",
         required=False,
     )
     parser.add_argument(
@@ -120,10 +131,31 @@ def parse_arguments():
     )
     parser.add_argument(
         "--learning_rate",
-        dest="lr",
+        dest="lr_init",
         type=float,
         default=0.001,
         help="setting learning rate of optimizer",
+    )
+    parser.add_argument(
+        "--LR_type",
+        dest="lr_type",
+        type=str,
+        default="ED",
+        help="Type of the LR scheduler you want to use. It can be 'ED':ExponentialDecay | 'CD': CosineDecay | 'ITD': InverseTimeDecay",
+    )
+    parser.add_argument(
+        "--LR_decay_rate",
+        dest="LR_decay",
+        type=float,
+        default=0.95,
+        help="setting decay rate of Learning Rate Schedule.",
+    )
+    parser.add_argument(
+        "--LR_decay_step",
+        dest="decay_step",
+        type=float,
+        default=50,
+        help="setting decay step of Learning Rate Schedule.",
     )
     parser.add_argument(
         "--decay_rate",
@@ -146,7 +178,76 @@ def parse_arguments():
         default=True,
         help="setting nesterov term of  optimizer: True or False",
     )
+    parser.add_argument(
+        "--exp",
+        dest="experiment",
+        type=str,
+        default="test-experiment",
+        help="setting the experiment under which mlflow must be logged",
+    )
 
+    parser.add_argument(
+        "--bg_scale",
+        dest="bengraham_scale",
+        type=int,
+        default=350,
+        help="setting the scale for BenGraham transform",
+    )
+
+    parser.add_argument(
+        "--shape",
+        dest="shape",
+        type=int,
+        default=224,
+        help="setting shape of image for resize transform",
+    )
+
+    parser.add_argument(
+        "--keep_AR",
+        dest="keepAspectRatio",
+        type=bool,
+        default=False,
+        help="whether to keep aspect ratio for resize transform or not",
+    )
+
+    parser.add_argument(
+        "--tv_frac",
+        dest="train_val_fraction",
+        type=float,
+        default=0.8,
+        help="a fraction to split train and validation images",
+    )
+
+    parser.add_argument(
+        "--data_frac",
+        dest="data_fraction",
+        type=float,
+        default=1,
+        help="fraction of all the data we want to train on them",
+    )
+
+    parser.add_argument(
+        "--ES_mode",
+        dest="early_stopping_mode",
+        type=str,
+        default="min",
+        help="setting the mode of early stopping callback",
+    )
+
+    parser.add_argument(
+        "--ES_monitor",
+        dest="early_stopping_monitor",
+        type=str,
+        default="val_loss",
+        help="setting the monitor type of early stopping callback",
+    )
+    parser.add_argument(
+        "--ES_verbose",
+        dest="early_stopping_verbose",
+        type=int,
+        default=1,
+        help="setting the verbose of early stopping callback",
+    )
     args = parser.parse_args()
     return args
 
@@ -158,8 +259,9 @@ def main():
 
     # Parameters
     num_classes = 8
-    tag = "vgg16"
+    tag = "vgg16 mix dataset"
 
+    mlflow.set_experiment(args.experiment)
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", tag)
 
@@ -167,9 +269,9 @@ def main():
     compose = Compose(
         transforms=[
             RemovePadding(),
-            BenGraham(350),
-            Resize((224, 224), False),
-            KerasPreprocess(model_name="vgg16"),
+            BenGraham(args.bengraham_scale),
+            Resize((args.shape, args.shape), args.keepAspectRatio),
+            KerasPreprocess(model_name="inception"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
@@ -179,15 +281,15 @@ def main():
     ########################### MAIN DATASET ############################
     # split data
     (df_train, df_val) = split_ODIR(
-        path_train_val=args.train_val_path, train_val_frac=0.8
+        path_train_val=args.train_val_path, train_val_frac=args.train_val_fraction
     )
     # create both train and validation sets
     ODIR_dataset = ODIR_Dataset(
-        img_folder_path=args.data_folder1,
+        img_folder_path=args.data_folder,
         csv_path=args.train_val_path,
-        img_shape=(224, 224),
+        img_shape=(args.shape, args.shape),
         num_classes=8,
-        frac=0.003,
+        frac=args.data_fraction,
         transforms=compose,
     )
     train_dataset1 = ODIR_dataset.subset(df_train)
@@ -196,14 +298,14 @@ def main():
     ########################### SECOND DATASET ############################
     # split data
     (df_train, df_val) = split_Cataract(
-        Image_path=args.data_folder2, train_val_frac=0.8
+        Image_path=args.data_folder2, train_val_frac=args.train_val_fraction
     )
     # create both train and validation sets
     Cataract_dataset = Cataract_Dataset(
         img_folder_path=args.data_folder2,
-        img_shape=(224, 224),
+        img_shape=(args.shape, args.shape),
         num_classes=4,
-        frac=0.01,
+        frac=args.data_fraction,
         transforms=compose,
     )
 
@@ -226,8 +328,8 @@ def main():
 
     # Model
     model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
-    if args.imagenet_weights_path is not None:
-        model.load_imagenet_weights(path=args.imagenet_weights_path)
+    if args.imagenet_weights:
+        model.load_imagenet_weights()
     # need to check
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
@@ -241,22 +343,44 @@ def main():
     )
     totalParams = trainableParams + nonTrainableParams
 
-    mlflow.log_param("Batch size", args.batch_size)
-    mlflow.log_param("Epochs", args.epochs)
-    mlflow.log_param("Patience", args.patience)
-    mlflow.log_param("Loss", args.loss)
-    mlflow.log_param("Learning rate", args.lr)
-    mlflow.log_param("ODIR Training data size", len(train_dataset1))
-    mlflow.log_param("ODIR Validation data size", len(val_dataset1))
-    mlflow.log_param("Cataract Training data size", len(train_dataset2))
-    mlflow.log_param("Cataract Validation data size", len(val_dataset2))
+    add_args_to_mlflow(args)
+    mlflow.log_param("Training_1 data size", len(train_dataset1))
+    mlflow.log_param("Validation_1 data size", len(val_dataset1))
+    mlflow.log_param("Training_2 data size", len(train_dataset2))
+    mlflow.log_param("Validation_2 data size", len(val_dataset2))
     mlflow.log_param("Total params", totalParams)
     mlflow.log_param("Trainable params", trainableParams)
     mlflow.log_param("Non-trainable params", nonTrainableParams)
 
+    # Set Schedules for LR
+    if args.lr_type == "ED":
+        LR_schedule = ExponentialDecay(
+            initial_learning_rate=args.lr_init,
+            decay_steps=args.decay_step,
+            decay_rate=args.LR_decay,
+            staircase=True,
+        )
+    elif args.lr_type == "CD":
+        LR_schedule = CosineDecay(
+            initial_learning_rate=args.lr_init, decay_steps=args.decay_step
+        )
+    elif args.lr_type == "ITD":
+        LR_schedule = InverseTimeDecay(
+            initial_learning_rate=args.lr_init,
+            decay_steps=args.decay_step,
+            decay_rate=args.LR_decay,
+            staircase=True,
+        )
+    else:
+        raise ValueError("--LR_type must be in ['ED', 'CD', 'ITD']")
+
     # Optimizer
+    # TODO: Define multiple optimizer
     sgd = SGD(
-        lr=args.lr, decay=args.decay, momentum=args.momentum, nesterov=args.nesterov
+        learning_rate=LR_schedule,
+        decay=args.decay,
+        momentum=args.momentum,
+        nesterov=args.nesterov,
     )
 
     # Metrics
@@ -285,12 +409,22 @@ def main():
         monitor="val_loss", patience=args.patience, mode="min", verbose=1
     )
 
+    model_file = os.path.join(args.result, f"model_weights_{tag}.h5")
+    modelCheckpoint = tf.keras.callbacks.ModelCheckpoint(
+        model_file,
+        save_best_only=True,
+        save_weights_only=False,
+        verbose=1,
+        mode="min",
+        monitor="val_loss",
+    )
+
     # Train
     history = model.train(
         epochs=args.epochs,
         loss=args.loss,
         metrics=metrics,
-        callbacks=[MlflowCallback(), earlyStoppingCallback],
+        callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
         optimizer=sgd,
         train_data_loader=train_DL,
         validation_data_loader=val_DL,
@@ -301,9 +435,6 @@ def main():
     print("model trained successfuly.")
 
     # Save
-    print("Saving models weights...")
-    model_file = os.path.join(args.result, f"model_weights_{tag}.h5")
-    model.save(model_file)
     mlflow.log_artifact(model_file)
     print(f"Saved model weights in {model_file}")
 
