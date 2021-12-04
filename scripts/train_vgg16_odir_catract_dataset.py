@@ -248,6 +248,27 @@ def parse_arguments():
         default=1,
         help="setting the verbose of early stopping callback",
     )
+    parser.add_argument(
+        "--dev_cmt",
+        dest="last_Dev_commit",
+        type=str,
+        help="Last dev commit that you are using for training",
+        required=True,
+    )
+    parser.add_argument(
+        "--Auth_name",
+        dest="authur_name",
+        type=str,
+        help="enter your name here plz",
+        required=True,
+    )
+    parser.add_argument(
+        "--desc",
+        dest="Description",
+        type=str,
+        help="enter a short description to show what your aim for this run is",
+        required=True,
+    )
     args = parser.parse_args()
     return args
 
