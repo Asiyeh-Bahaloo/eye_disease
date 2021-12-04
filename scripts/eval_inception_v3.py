@@ -1,17 +1,20 @@
-import os
 import argparse
+import glob
+import os
+
+import cv2
 import mlflow
 import numpy as np
-import tensorflow as tf
-import glob
-import cv2
-from tqdm import tqdm
-import numpy as np
 import pandas as pd
+import tensorflow as tf
+from tqdm import tqdm
 
-from eye.models.inception_v3 import InceptionV3
-from eye.utils.utils import pprint_metrics, calc_metrics, add_args_to_mlflow
-from eye.utils import plotter_utils as p
+from eye.data.transforms import (
+    Compose,
+    Resize,
+    RemovePadding,
+    KerasPreprocess,
+)
 from eye.evaluation.metrics import (
     loss_per_class,
     accuracy_per_class,
@@ -22,19 +25,16 @@ from eye.evaluation.metrics import (
     auc_per_class,
     final_per_class,
     specificity_per_class,
-    sensitivity_per_class,
-    specificity,
+    micro_auc,
+    micro_recall,
+    micro_precision,
+    micro_specificity,
+    micro_sensitivity,
+    micro_f1_score,
 )
-from eye.data.transforms import (
-    Compose,
-    Resize,
-    RemovePadding,
-    BenGraham,
-    RandomShift,
-    RandomFlipLR,
-    RandomFlipUD,
-    KerasPreprocess,
-)
+from eye.models.inception_v3 import InceptionV3
+from eye.utils import plotter_utils as p
+from eye.utils.utils import pprint_metrics, add_args_to_mlflow
 
 
 def parse_arguments():
@@ -189,7 +189,12 @@ def main():
         tf.keras.metrics.Precision(name="precision"),
         tf.keras.metrics.Recall(name="recall"),
         tf.keras.metrics.AUC(name="auc"),
-        specificity,
+        micro_auc,
+        micro_recall,
+        micro_precision,
+        micro_specificity,
+        micro_sensitivity,
+        micro_f1_score,
     ]
 
     for l in range(num_classes):
