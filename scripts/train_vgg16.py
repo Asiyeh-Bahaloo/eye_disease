@@ -36,8 +36,12 @@ from eye.evaluation.metrics import (
     final_per_class,
     specificity_per_class,
     sensitivity_per_class,
-    specificity,
-)
+    micro_auc,
+    micro_recall,
+    micro_precision,
+    micro_specificity,
+    micro_sensitivity,
+    micro_f1_score,)
 
 
 def parse_arguments():
@@ -374,7 +378,12 @@ def main():
         tf.keras.metrics.Precision(name="precision"),
         tf.keras.metrics.Recall(name="recall"),
         tf.keras.metrics.AUC(name="auc"),
-        specificity,
+        micro_auc,
+        micro_recall,
+        micro_precision,
+        micro_specificity,
+        micro_sensitivity,
+        micro_f1_score,
     ]
 
     for l in range(num_classes):

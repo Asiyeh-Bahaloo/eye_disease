@@ -1,5 +1,6 @@
-import os
 import argparse
+import os
+
 import mlflow
 import numpy as np
 import tensorflow as tf
@@ -10,9 +11,6 @@ from tensorflow.keras.optimizers.schedules import (
     InverseTimeDecay,
 )
 
-from eye.models.resnet_v2 import ResnetV2
-from eye.utils import plotter_utils as p
-from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 from eye.data.dataloader import ODIR_Dataloader
 from eye.data.dataset import ODIR_Dataset
 from eye.data.transforms import (
@@ -20,9 +18,6 @@ from eye.data.transforms import (
     Resize,
     RemovePadding,
     BenGraham,
-    RandomShift,
-    RandomFlipLR,
-    RandomFlipUD,
     KerasPreprocess,
 )
 from eye.evaluation.metrics import (
@@ -35,9 +30,17 @@ from eye.evaluation.metrics import (
     auc_per_class,
     final_per_class,
     specificity_per_class,
-    sensitivity_per_class,
-    specificity,
+    micro_auc,
+    micro_recall,
+    micro_precision,
+    micro_specificity,
+    micro_sensitivity,
+    micro_f1_score, accuracy_score,
+
 )
+from eye.models.resnet_v2 import ResnetV2
+from eye.utils import plotter_utils as p
+from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 
 
 def parse_arguments():
@@ -369,11 +372,13 @@ def main():
 
     # Metrics
     metrics = [
-        tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-        tf.keras.metrics.Precision(name="precision"),
-        tf.keras.metrics.Recall(name="recall"),
-        tf.keras.metrics.AUC(name="auc"),
-        specificity,
+        accuracy_score,
+        micro_auc,
+        micro_recall,
+        micro_precision,
+        micro_specificity,
+        micro_sensitivity,
+        micro_f1_score,
     ]
 
     for l in range(num_classes):
