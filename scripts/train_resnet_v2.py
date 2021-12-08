@@ -1,6 +1,5 @@
-import argparse
 import os
-
+import argparse
 import mlflow
 import numpy as np
 import tensorflow as tf
@@ -11,6 +10,9 @@ from tensorflow.keras.optimizers.schedules import (
     InverseTimeDecay,
 )
 
+from eye.models.resnet_v2 import ResnetV2
+from eye.utils import plotter_utils as p
+from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 from eye.data.dataloader import ODIR_Dataloader
 from eye.data.dataset import ODIR_Dataset
 from eye.data.transforms import (
@@ -18,8 +20,12 @@ from eye.data.transforms import (
     Resize,
     RemovePadding,
     BenGraham,
+    RandomShift,
+    RandomFlipLR,
+    RandomFlipUD,
     KerasPreprocess,
 )
+
 from eye.evaluation.metrics import (
     loss_per_class,
     accuracy_per_class,
@@ -35,12 +41,9 @@ from eye.evaluation.metrics import (
     micro_precision,
     micro_specificity,
     micro_sensitivity,
-    micro_f1_score, accuracy_score,
-
+    micro_f1_score,
+    accuracy_score,
 )
-from eye.models.resnet_v2 import ResnetV2
-from eye.utils import plotter_utils as p
-from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 
 
 def parse_arguments():
@@ -288,7 +291,7 @@ def main():
             RemovePadding(),
             BenGraham(args.bengraham_scale),
             Resize((args.shape, args.shape), args.keepAspectRatio),
-            KerasPreprocess(model_name="inception"),
+            KerasPreprocess(model_name="resnet"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
