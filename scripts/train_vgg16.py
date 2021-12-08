@@ -25,6 +25,7 @@ from eye.data.transforms import (
     RandomFlipUD,
     KerasPreprocess,
 )
+
 from eye.evaluation.metrics import (
     loss_per_class,
     accuracy_per_class,
@@ -41,7 +42,8 @@ from eye.evaluation.metrics import (
     micro_precision,
     micro_specificity,
     micro_sensitivity,
-    micro_f1_score,)
+    micro_f1_score,
+)
 
 
 def parse_arguments():
@@ -289,7 +291,7 @@ def main():
             RemovePadding(),
             BenGraham(args.bengraham_scale),
             Resize((args.shape, args.shape), args.keepAspectRatio),
-            KerasPreprocess(model_name="inception"),
+            KerasPreprocess(model_name="vgg16"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
@@ -317,7 +319,7 @@ def main():
     val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
-    model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
+    model = Vgg16(num_classes=num_classes, input_shape=(args.shape, args.shape, 3))
     if args.imagenet_weights_path is not None:
         model.load_imagenet_weights(path=args.imagenet_weights_path)
     # need to check

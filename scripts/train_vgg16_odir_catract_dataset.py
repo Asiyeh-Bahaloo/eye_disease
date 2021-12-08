@@ -18,6 +18,7 @@ from eye.utils.utils import (
     split_Cataract,
     add_args_to_mlflow,
 )
+
 from eye.data.dataloader import Mix_Dataloader
 from eye.data.dataset import ODIR_Dataset, Cataract_Dataset
 from eye.data.transforms import (
@@ -30,6 +31,7 @@ from eye.data.transforms import (
     RandomFlipUD,
     KerasPreprocess,
 )
+
 from eye.evaluation.metrics import (
     loss_per_class,
     accuracy_per_class,
@@ -46,7 +48,8 @@ from eye.evaluation.metrics import (
     micro_precision,
     micro_specificity,
     micro_sensitivity,
-    micro_f1_score, accuracy_score,
+    micro_f1_score,
+    accuracy_score,
 )
 
 
@@ -297,7 +300,7 @@ def main():
             RemovePadding(),
             BenGraham(args.bengraham_scale),
             Resize((args.shape, args.shape), args.keepAspectRatio),
-            KerasPreprocess(model_name="inception"),
+            KerasPreprocess(model_name="vgg16"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
@@ -353,7 +356,7 @@ def main():
     )
 
     # Model
-    model = Vgg16(num_classes=num_classes, input_shape=(224, 224, 3))
+    model = Vgg16(num_classes=num_classes, input_shape=(args.shape, args.shape, 3))
     if args.imagenet_weights:
         model.load_imagenet_weights()
     # need to check

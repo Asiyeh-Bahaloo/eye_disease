@@ -25,6 +25,7 @@ from eye.data.transforms import (
     RandomFlipUD,
     KerasPreprocess,
 )
+
 from eye.evaluation.metrics import (
     loss_per_class,
     accuracy_per_class,
@@ -41,7 +42,8 @@ from eye.evaluation.metrics import (
     micro_precision,
     micro_specificity,
     micro_sensitivity,
-    micro_f1_score, accuracy_score,
+    micro_f1_score,
+    accuracy_score,
 )
 
 
@@ -291,7 +293,7 @@ def main():
             RemovePadding(),
             BenGraham(args.bengraham_scale),
             Resize((args.shape, args.shape), args.keepAspectRatio),
-            KerasPreprocess(model_name="inception"),
+            KerasPreprocess(model_name="xception"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
