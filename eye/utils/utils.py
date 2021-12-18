@@ -189,49 +189,20 @@ def save_predict_output(predictions, path):
 
 
 class MlflowCallback(tf.keras.callbacks.Callback):
+    
+    def __init__(self, metric):
+        super().__init__()
+        self.metric  = metric
 
     # This function will be called after each epoch.
     def on_epoch_end(self, epoch, logs=None):
         if not logs:
             return
-        # Log the metrics from Keras to MLflow
-        mlflow.log_metric("loss", logs["loss"], step=epoch)
-        mlflow.log_metric("val_loss", logs["val_loss"], step=epoch)
-        mlflow.log_metric("accuracy", logs["accuracy"], step=epoch)
-        mlflow.log_metric("val_accuracy", logs["val_accuracy"], step=epoch)
-        mlflow.log_metric("precision", logs["precision"], step=epoch)
-        mlflow.log_metric("val_precision", logs["val_precision"], step=epoch)
-        mlflow.log_metric("recall", logs["recall"], step=epoch)
-        mlflow.log_metric("val_recall", logs["val_recall"], step=epoch)
-        mlflow.log_metric("auc", logs["auc"], step=epoch)
-        mlflow.log_metric("val_auc", logs["val_auc"], step=epoch)
-        mlflow.log_metric("specificity", logs["specificity"], step=epoch)
-        mlflow.log_metric("val_specificity", logs["val_specificity"], step=epoch)
+        for metric in self.metric:
+            mlflow.log_metric(metric.__name__, logs[metric.__name__], step=epoch)
+            mlflow.log_metric("val_" + metric.__name__, logs["val_" + metric.__name__], step=epoch)
 
-        metrics = [
-            "loss",
-            "accuracy",
-            "precision",
-            "recall",
-            "kappa",
-            "f1",
-            "auc",
-            "final",
-            "specificity",
-        ]
-        labels = ["N", "D", "G", "C", "A", "H", "M", "O"]
-
-        for metric in metrics:
-            for label in labels:
-                mlflow.log_metric(
-                    label + "_" + metric, logs[metric + "ForLabel" + label], step=epoch
-                )
-                mlflow.log_metric(
-                    "val_" + label + "_" + metric,
-                    logs["val_" + metric + "ForLabel" + label],
-                    step=epoch,
-                )
-
+       
     # This function will be called after training completes.
     def on_train_end(self, logs=None):
         mlflow.log_param("num_layers", len(self.model.layers))
