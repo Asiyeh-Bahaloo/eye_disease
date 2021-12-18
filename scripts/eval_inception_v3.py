@@ -16,6 +16,9 @@ from eye.data.transforms import (
     KerasPreprocess,
 )
 from eye.evaluation.metrics import (
+    accuracy_score,
+    final_score,
+    kappa_score,
     loss_per_class,
     accuracy_per_class,
     precision_per_class,
@@ -185,11 +188,10 @@ def main():
 
     # Metrics
     defined_metrics = [
-        tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-        tf.keras.metrics.Precision(name="precision"),
-        tf.keras.metrics.Recall(name="recall"),
-        tf.keras.metrics.AUC(name="auc"),
+        accuracy_score,
         micro_auc,
+        final_score,
+        kappa_score,
         micro_recall,
         micro_precision,
         micro_specificity,

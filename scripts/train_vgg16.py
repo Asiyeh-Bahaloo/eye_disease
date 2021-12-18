@@ -27,6 +27,9 @@ from eye.data.transforms import (
 )
 
 from eye.evaluation.metrics import (
+    accuracy_score,
+    final_score,
+    kappa_score,
     loss_per_class,
     accuracy_per_class,
     precision_per_class,
@@ -376,11 +379,10 @@ def main():
 
     # Metrics
     metrics = [
-        tf.keras.metrics.BinaryAccuracy(name="accuracy"),
-        tf.keras.metrics.Precision(name="precision"),
-        tf.keras.metrics.Recall(name="recall"),
-        tf.keras.metrics.AUC(name="auc"),
+        accuracy_score,
         micro_auc,
+        final_score,
+        kappa_score,
         micro_recall,
         micro_precision,
         micro_specificity,
@@ -419,7 +421,7 @@ def main():
             epochs=args.epochs,
             loss=args.loss,
             metrics=metrics,
-            callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
+            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
             train_data_loader=train_DL,
@@ -435,7 +437,7 @@ def main():
         epochs=args.epochs,
         loss=args.loss,
         metrics=metrics,
-        callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
+        callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
         optimizer=sgd,
         freeze_backbone=False,
         train_data_loader=train_DL,

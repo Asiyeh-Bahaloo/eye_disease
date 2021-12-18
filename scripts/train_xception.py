@@ -27,6 +27,8 @@ from eye.data.transforms import (
 )
 
 from eye.evaluation.metrics import (
+    final_score,
+    kappa_score,
     loss_per_class,
     accuracy_per_class,
     precision_per_class,
@@ -379,6 +381,8 @@ def main():
     metrics = [
         accuracy_score,
         micro_auc,
+        final_score,
+        kappa_score,
         micro_recall,
         micro_precision,
         micro_specificity,
@@ -417,7 +421,7 @@ def main():
             epochs=args.epochs,
             loss=args.loss,
             metrics=metrics,
-            callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
+            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
             train_data_loader=train_DL,
@@ -433,7 +437,7 @@ def main():
         epochs=args.epochs,
         loss=args.loss,
         metrics=metrics,
-        callbacks=[MlflowCallback(), earlyStoppingCallback, modelCheckpoint],
+        callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
         optimizer=sgd,
         freeze_backbone=False,
         train_data_loader=train_DL,

@@ -1,9 +1,7 @@
 from numpy import mean
 from sklearn import metrics
-from sklearn.metrics import precision_score, recall_score, multilabel_confusion_matrix, roc_auc_score, f1_score, \
-    confusion_matrix, accuracy_score
+from sklearn.metrics import  multilabel_confusion_matrix, confusion_matrix
 from keras import backend as K
-import tensorflow as tf
 import numpy as np
 
 
@@ -23,12 +21,16 @@ def kappa_score(gt, pred, threshold=0.5):
     float
         calculated kappa score
     """
+    if not isinstance(gt, np.ndarray):
+        gt = gt.numpy()
+        pred = pred.numpy()
+
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
     return metrics.cohen_kappa_score(gt_flat, pred_flat > threshold)
 
 
-def kappa_per_class(label):
+def kappa_per_class(label,threshold=0.5):
     """A wrapper function that calculates the kappa score of each disease based on the label.
     Parameters
     ----------
@@ -44,7 +46,7 @@ def kappa_per_class(label):
     def kappa_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return kappa_score(y_true, y_pred)
+        return kappa_score(y_true, y_pred, threshold)
 
     kappa_per_label.__name__ = f"kappaForLabel{class_names[label]}"
     return kappa_per_label
@@ -71,7 +73,7 @@ def f1_score(gt, pred, threshold=0.5):
     return metrics.f1_score(gt_flat, pred_flat > threshold, average="micro")
 
 
-def f1_per_class(label):
+def f1_per_class(label, threshold=0.5):
     """A wrapper function that calculates the f1 score of each disease based on the label.
     Parameters
     ----------
@@ -87,13 +89,12 @@ def f1_per_class(label):
     def f1_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return f1_score(y_true, y_pred)
+        return f1_score(y_true, y_pred, threshold)
 
     f1_per_label.__name__ = f"f1ForLabel{class_names[label]}"
     return f1_per_label
 
-
-def macro_f1_score(y_true, y_pred):
+def micro_f1_score(y_true, y_pred, threshold=0.5):
     """
         calculates f1 for each label and returns mean of them
     Parameters
@@ -105,29 +106,17 @@ def macro_f1_score(y_true, y_pred):
     Returns
     -------
     f1:float
-        f1_score with average of 'macro'
+        f1_score with average of 'micro'
     """
-    return f1_score(y_true, y_pred, threshold=0.5, average='macro')
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
+
+    y_pred = (y_pred > threshold).astype('int')
+    return metrics.f1_score(y_true, y_pred, average='micro')
 
 
-def micro_f1_score(y_true, y_pred):
-    """
-        calculates f1 for each label and returns mean of them
-    Parameters
-    ----------
-    y_true : list of floats or ndarray
-        true labels
-    y_pred : list of floats or ndarray
-        predicted labels
-    Returns
-    -------
-    f1:float
-        f1_score with average of 'macro'
-    """
-    return f1_score(y_true, y_pred, threshold=0.5, average='micro')
-
-
-def auc_score(gt, pred):
+def auc_score(gt, pred, threshold=0.5):
     """
     returns AUC score based on the ground trouth and predictions.
     Parameters
@@ -143,13 +132,14 @@ def auc_score(gt, pred):
     """
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
+    pred_flat = (pred_flat > threshold)
     try:
         return metrics.roc_auc_score(gt_flat, pred_flat)
     except ValueError:
         return 0.0
 
 
-def auc_per_class(label):
+def auc_per_class(label, threshold=0.5):
     """A wrapper function that calculates the auc score of each disease based on the label.
     Parameters
     ----------
@@ -165,15 +155,15 @@ def auc_per_class(label):
     def auc_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return auc_score(y_true, y_pred)
+        return auc_score(y_true, y_pred, threshold)
 
     auc_per_label.__name__ = f"aucForLabel{class_names[label]}"
     return auc_per_label
 
 
-def macro_auc(y_true, y_pred):
+def micro_auc(y_true, y_pred, threshold=0.5):
     """
-    calculates auc with average of "macro"
+    calculates auc
     Parameters
     ----------
     y_true:list of floats or ndarray
@@ -183,36 +173,16 @@ def macro_auc(y_true, y_pred):
     Returns
     -------
     auc:float
-        auc with average of "macro"
+        auc with average of "micro"
     """
-    y_true = np.array(y_true)
-    y_true = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
-    y_pred = np.array(y_pred)
-    y_pred = (y_pred == y_pred.max(axis=1, keepdims=True)).astype(int)
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
 
-    return roc_auc_score(y_true, y_pred, average='macro')
+    y_pred = (y_pred > threshold).astype('int')
 
 
-def micro_auc(y_true, y_pred):
-    """
-    calculates auc with average of "macro"
-    Parameters
-    ----------
-    y_true:list of floats or ndarray
-        true labels
-    y_pred: list of floats or ndarray
-        predicted labels
-    Returns
-    -------
-    auc:float
-        auc with average of "macro"
-    """
-    y_true = np.array(y_true)
-    y_true = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
-    y_pred = np.array(y_pred)
-    y_pred = (y_pred == y_pred.max(axis=1, keepdims=True)).astype(int)
-
-    return roc_auc_score(y_true, y_pred, average='micro')
+    return metrics.roc_auc_score(y_true, y_pred, average='micro')
 
 
 def final_score(gt, pred, threshold=0.5):
@@ -231,14 +201,18 @@ def final_score(gt, pred, threshold=0.5):
     float
         final score: mean of the kappa, f1, AUC scores.
     """
-
+    if not isinstance(gt, np.ndarray):
+        gt = gt.numpy()
+        pred = pred.numpy()
+    
     kappa = kappa_score(gt, pred, threshold)
     f1 = f1_score(gt, pred, threshold)
-    auc = auc_score(gt, pred)
+    auc = auc_score(gt, pred, threshold)
+
     return (kappa + f1 + auc) / 3.0
 
 
-def final_per_class(label):
+def final_per_class(label, threshold=0.5):
     """A wrapper function that calculates the final score of each disease based on the label.
     Parameters
     ----------
@@ -254,7 +228,7 @@ def final_per_class(label):
     def final_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return final_score(y_true, y_pred)
+        return final_score(y_true, y_pred, threshold)
 
     final_per_label.__name__ = f"finalForLabel{class_names[label]}"
     return final_per_label
@@ -276,12 +250,16 @@ def accuracy_score(gt, pred, threshold=0.5):
     float
         calculated accuracy
     """
+    if not isinstance(gt, np.ndarray):
+        gt = gt.numpy()
+        pred = pred.numpy()
+
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
     return metrics.accuracy_score(gt_flat, pred_flat > threshold)
 
 
-def accuracy_per_class(label):
+def accuracy_per_class(label, threshold=0.5):
     """A wrapper function that calculates the accuracy of each disease based on the label.
     Parameters
     ----------
@@ -297,7 +275,7 @@ def accuracy_per_class(label):
     def accuracy_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return accuracy_score(y_true, y_pred)
+        return accuracy_score(y_true, y_pred, threshold)
 
     accuracy_per_label.__name__ = f"accuracyForLabel{class_names[label]}"
     return accuracy_per_label
@@ -321,10 +299,10 @@ def precision_score(gt, pred, threshold=0.5):
     """
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
-    return metrics.precision_score(gt_flat, pred_flat > threshold)
+    return metrics.precision_score(gt_flat, pred_flat > threshold, zero_division = 0)
 
 
-def precision_per_class(label):
+def precision_per_class(label, threshold=0.5):
     """A wrapper function that calculates the precision score of each disease based on the label.
     Parameters
     ----------
@@ -340,13 +318,13 @@ def precision_per_class(label):
     def precision_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return precision_score(y_true, y_pred)
+        return precision_score(y_true, y_pred, threshold)
 
     precision_per_label.__name__ = f"precisionForLabel{class_names[label]}"
     return precision_per_label
 
 
-def macro_precision(y_true, y_pred):
+def micro_precision(y_true, y_pred, threshold=0.5):
     """
            calculates precision of each labels and returns mean of them
        Parameters
@@ -358,26 +336,14 @@ def macro_precision(y_true, y_pred):
        Returns
        -------
        recall: float
-           precision with average of 'macro'
+           precision with average of 'micro'
        """
-    return precision_score(y_true, y_pred, 0.5, average='macro')
-
-
-def micro_precision(y_true, y_pred):
-    """
-           calculates precision of each labels and returns mean of them
-       Parameters
-       ----------
-       y_true : list of floats or ndarray
-           true labels
-       y_pred : lost of floats or ndarray
-           predicted labels
-       Returns
-       -------
-       recall: float
-           precision with average of 'macro'
-       """
-    return precision_score(y_true, y_pred, 0.5, average='micro')
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()   
+    y_pred = (y_pred > threshold).astype('int')
+   
+    return metrics.precision_score(y_true, y_pred, average='micro', zero_division=0)
 
 
 def recall_score(gt, pred, threshold=0.5):
@@ -398,10 +364,10 @@ def recall_score(gt, pred, threshold=0.5):
     """
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
-    return metrics.recall_score(gt_flat, pred_flat > threshold)
+    return metrics.recall_score(gt_flat, pred_flat > threshold, zero_division=0)
 
 
-def recall_per_class(label):
+def recall_per_class(label, threshold=0.5):
     """A wrapper function that calculates the recall score of each disease based on the label.
     Parameters
     ----------
@@ -417,13 +383,13 @@ def recall_per_class(label):
     def recall_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return recall_score(y_true, y_pred)
+        return recall_score(y_true, y_pred, threshold)
 
     recall_per_label.__name__ = f"recallForLabel{class_names[label]}"
     return recall_per_label
 
 
-def macro_recall(y_true, y_pred):
+def micro_recall(y_true, y_pred, threshold=0.5):
     """
         calculates recall of each labels and returns mean of them
     Parameters
@@ -435,51 +401,18 @@ def macro_recall(y_true, y_pred):
     Returns
     -------
     recall: float
-        recall with average of 'macro'
+        recall with average of 'micro'
     """
-    return recall_score(y_true, y_pred, threshold=0.5, average='macro')
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
+
+    y_pred = (y_pred > threshold).astype('int')
+    return metrics.recall_score(y_true, y_pred, average='micro', zero_division=0)
 
 
-def micro_recall(y_true, y_pred):
-    """
-        calculates recall of each labels and returns mean of them
-    Parameters
-    ----------
-    y_true : list of floats or ndarray
-        true labels
-    y_pred : lost of floats or ndarray
-        predicted labels
-    Returns
-    -------
-    recall: float
-        recall with average of 'macro'
-    """
-    return recall_score(y_true, y_pred, threshold=0.5, average='micro')
 
-
-def specificity(y_true, y_pred):
-    """specificity function calculate  the specificity of model
-    this function with getting true label and predicted label of model calculates  the specificity
-    also we can pass this function as parameters to compile function
-    Parameters
-    ----------
-    y_true : numpy array
-        the matrix of true label
-    y_pred : numpy array
-        the matrix of predicted label
-    Returns
-    -------
-    tf.tensor
-        it is the only number of specificity
-    """
-    tn = K.sum(K.round(K.clip((1 - y_true) * (1 - y_pred), 0, 1)))
-    fp = K.sum(K.round(K.clip((1 - y_true) * y_pred, 0, 1)))
-    fp = tf.cast(fp, tf.float32)
-    tn = tf.cast(tn, tf.float32)
-    return tn / (tn + fp + K.epsilon())
-
-
-def specificity_per_class(label):
+def specificity_per_class(label, threshold=0.5):
     """A wrapper function that calculates the specificity of each disease based on the label.
     Parameters
     ----------
@@ -495,16 +428,14 @@ def specificity_per_class(label):
     def specificity_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return specificity(y_true, y_pred)
+        return specificity(y_true, y_pred,threshold)
 
     specificity_per_label.__name__ = f"specificityForLabel{class_names[label]}"
     return specificity_per_label
 
-
-def macro_specificity(y_true, y_pred):
+def specificity(y_true, y_pred, threshold=0.5):
     """
-    gets multilabel y_true and y_pred  and calculate specificity for each label
-    and returns mean of them.
+    calculate specificity 
     Parameters
     ----------
     y_true: list of floats of numpy.ndarray
@@ -514,22 +445,24 @@ def macro_specificity(y_true, y_pred):
     Returns
     -------
     macro_specificity: float
-       mean of specificities of each label
+       specificities 
     """
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
+
     y_true = np.array(y_true)
-    y_true = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
     y_pred = np.array(y_pred)
-    y_pred = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
-    confusion_matrices = multilabel_confusion_matrix(y_true, y_pred, )
-    specificities = []
-    for cm in confusion_matrices:
-        tn, fp, fn, tp = cm.ravel()
-        specificity = float(tn / (tn + fp)) if (tn + fp) != 0 else 0
-        specificities.append(specificity)
-    return mean(specificities)
+    y_pred = (y_pred > threshold).astype('int')
+    
+    tn, fp, _, _ = confusion_matrix(y_true, y_pred,labels=[0,1]).ravel()
+    specificity = float(tn / (tn + fp)) if (tn + fp) != 0 else 0
+
+    return specificity
 
 
-def micro_specificity(y_true, y_pred):
+
+def micro_specificity(y_true, y_pred, threshold=0.5):
     """
 
     Parameters
@@ -542,40 +475,22 @@ def micro_specificity(y_true, y_pred):
     -------
     float: specificity with micro average
     """
-    y_true = np.array(y_true)
-    y_true = y_true.flatten().astype(int)
-    y_pred = np.array(y_pred)
-    y_pred = y_pred.flatten().astype(int)
-    cm = confusion_matrix(y_true, y_pred, )
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
 
-    tn, fp, fn, tp = cm.ravel()
+    y_true = y_true.flatten()
+    y_pred = (y_pred > threshold).astype('int')
+    y_pred = y_pred.flatten()
+    cm = confusion_matrix(y_true, y_pred, labels=[0,1])
+
+    tn, fp, _, _ = cm.ravel()
     specificity = float(tn / (tn + fp)) if (tn + fp) != 0 else 0
 
     return specificity
 
 
-def sensitivity(y_true, y_pred):
-    """sensitivity function calculate  the specificity of sensitivity
-    this function with getting true label and predicted label of model calculates  the sensitivity
-    also we can pass this function as parameters to compile function
-    Parameters
-    ----------
-    y_true : numpy array
-        the matrix of true label
-    y_pred : numpy array
-        the matrix of predicted label
-    Returns
-    -------
-    tf.tensor
-        it is the only number of sensitivity
-    """
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    possible_positives = tf.cast(possible_positives, tf.float32)
-    return true_positives / (possible_positives + K.epsilon())
-
-
-def sensitivity_per_class(label):
+def sensitivity_per_class(label, threshold=0.5):
     """A wrapper function that calculates the sensitivity of each disease based on the label.
     Parameters
     ----------
@@ -591,13 +506,13 @@ def sensitivity_per_class(label):
     def sensitivity_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return sensitivity(y_true, y_pred)
+        return micro_sensitivity(y_true, y_pred, threshold)
 
     sensitivity_per_label.__name__ = f"sensitivityForLabel{class_names[label]}"
     return sensitivity_per_label
 
 
-def micro_sensitivity(y_true, y_pred):
+def micro_sensitivity(y_true, y_pred, threshold=0.5):
     """
 
     Parameters
@@ -610,19 +525,22 @@ def micro_sensitivity(y_true, y_pred):
     -------
     float: sensitivity with micro average
     """
-    y_true = np.array(y_true)
-    y_true = y_true.flatten().astype(int)
-    y_pred = np.array(y_pred)
-    y_pred = y_pred.flatten().astype(int)
-    cm = confusion_matrix(y_true, y_pred, )
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
 
-    tn, fp, fn, tp = cm.ravel()
+    y_true = y_true.flatten()
+    y_pred = y_pred.flatten()
+    y_pred = (y_pred > threshold).astype('int')
+    
+    cm = confusion_matrix(y_true, y_pred,labels=[0,1])
+
+    _, _, fn, tp = cm.ravel()
     sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
 
     return sensitivity
 
-
-def macro_sensitivity(y_true, y_pred):
+def sensitivity(y_true, y_pred, threshold= 0.5):
     """
     gets multilabel y_true and y_pred  and calculate sensitivity for each label
     and returns mean of them.
@@ -637,17 +555,17 @@ def macro_sensitivity(y_true, y_pred):
     macro_sensitivity: float
        mean of sensitivity of each label
     """
-    y_true = np.array(y_true)
-    y_true = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
-    y_pred = np.array(y_pred)
-    y_pred = (y_true == y_true.max(axis=1, keepdims=True)).astype(int)
-    confusion_matrices = multilabel_confusion_matrix(y_true, y_pred, )
-    sensitivities = []
-    for cm in confusion_matrices:
-        tn, fp, fn, tp = cm.ravel()
-        sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
-        sensitivities.append(sensitivity)
-    return mean(sensitivity)
+    if not isinstance(y_pred, np.ndarray):
+        y_true = y_true.numpy()
+        y_pred = y_pred.numpy()
+
+    y_pred = (y_true > threshold)
+
+    _, _, fn, tp = confusion_matrix(y_true, y_pred,labels=[0,1]).ravel()
+
+
+    sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
+    return sensitivity
 
 
 def get_specific_metrics(x_test, y_test, model, metrics, loss):

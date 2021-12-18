@@ -19,7 +19,7 @@ def plot_metrics(history, path):
     path : str
         Path to the FILE you want to save your result.
     """
-    metrics2 = ["loss", "auc", "precision", "recall"]
+    metrics2 = ["loss", "micro_auc", "micro_precision", "micro_recall"]
     for n, metric in enumerate(metrics2):
         name = metric.replace("_", " ").capitalize()
         plt.subplot(2, 2, n + 1)
@@ -62,8 +62,8 @@ def plot_accuracy(history, path):
         Path to the FILE you want to save your result.
     """
 
-    plt.plot(history.history["accuracy"], label="accuracy")
-    plt.plot(history.history["val_accuracy"], label="val_accuracy")
+    plt.plot(history.history["accuracy_score"], label="accuracy_score")
+    plt.plot(history.history["val_accuracy_score"], label="accuracy_score")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
     plt.legend(loc="lower right")
