@@ -1,8 +1,9 @@
 from numpy import mean
 from sklearn import metrics
-from sklearn.metrics import  multilabel_confusion_matrix, confusion_matrix
+from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix
 from keras import backend as K
 import numpy as np
+from tensorflow.keras.losses import BinaryCrossentropy
 
 
 def kappa_score(gt, pred, threshold=0.5):
@@ -30,7 +31,7 @@ def kappa_score(gt, pred, threshold=0.5):
     return metrics.cohen_kappa_score(gt_flat, pred_flat > threshold)
 
 
-def kappa_per_class(label,threshold=0.5):
+def kappa_per_class(label, threshold=0.5):
     """A wrapper function that calculates the kappa score of each disease based on the label.
     Parameters
     ----------
@@ -94,6 +95,7 @@ def f1_per_class(label, threshold=0.5):
     f1_per_label.__name__ = f"f1ForLabel{class_names[label]}"
     return f1_per_label
 
+
 def micro_f1_score(y_true, y_pred, threshold=0.5):
     """
         calculates f1 for each label and returns mean of them
@@ -112,8 +114,8 @@ def micro_f1_score(y_true, y_pred, threshold=0.5):
         y_true = y_true.numpy()
         y_pred = y_pred.numpy()
 
-    y_pred = (y_pred > threshold).astype('int')
-    return metrics.f1_score(y_true, y_pred, average='micro')
+    y_pred = (y_pred > threshold).astype("int")
+    return metrics.f1_score(y_true, y_pred, average="micro")
 
 
 def auc_score(gt, pred, threshold=0.5):
@@ -132,7 +134,7 @@ def auc_score(gt, pred, threshold=0.5):
     """
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
-    pred_flat = (pred_flat > threshold)
+    pred_flat = pred_flat > threshold
     try:
         return metrics.roc_auc_score(gt_flat, pred_flat)
     except ValueError:
@@ -179,10 +181,9 @@ def micro_auc(y_true, y_pred, threshold=0.5):
         y_true = y_true.numpy()
         y_pred = y_pred.numpy()
 
-    y_pred = (y_pred > threshold).astype('int')
+    y_pred = (y_pred > threshold).astype("int")
 
-
-    return metrics.roc_auc_score(y_true, y_pred, average='micro')
+    return metrics.roc_auc_score(y_true, y_pred, average="micro")
 
 
 def final_score(gt, pred, threshold=0.5):
@@ -204,7 +205,7 @@ def final_score(gt, pred, threshold=0.5):
     if not isinstance(gt, np.ndarray):
         gt = gt.numpy()
         pred = pred.numpy()
-    
+
     kappa = kappa_score(gt, pred, threshold)
     f1 = f1_score(gt, pred, threshold)
     auc = auc_score(gt, pred, threshold)
@@ -299,7 +300,7 @@ def precision_score(gt, pred, threshold=0.5):
     """
     gt_flat = gt.flatten()
     pred_flat = pred.flatten()
-    return metrics.precision_score(gt_flat, pred_flat > threshold, zero_division = 0)
+    return metrics.precision_score(gt_flat, pred_flat > threshold, zero_division=0)
 
 
 def precision_per_class(label, threshold=0.5):
@@ -326,24 +327,24 @@ def precision_per_class(label, threshold=0.5):
 
 def micro_precision(y_true, y_pred, threshold=0.5):
     """
-           calculates precision of each labels and returns mean of them
-       Parameters
-       ----------
-       y_true : list of floats or ndarray
-           true labels
-       y_pred : lost of floats or ndarray
-           predicted labels
-       Returns
-       -------
-       recall: float
-           precision with average of 'micro'
-       """
+        calculates precision of each labels and returns mean of them
+    Parameters
+    ----------
+    y_true : list of floats or ndarray
+        true labels
+    y_pred : lost of floats or ndarray
+        predicted labels
+    Returns
+    -------
+    recall: float
+        precision with average of 'micro'
+    """
     if not isinstance(y_pred, np.ndarray):
         y_true = y_true.numpy()
-        y_pred = y_pred.numpy()   
-    y_pred = (y_pred > threshold).astype('int')
-   
-    return metrics.precision_score(y_true, y_pred, average='micro', zero_division=0)
+        y_pred = y_pred.numpy()
+    y_pred = (y_pred > threshold).astype("int")
+
+    return metrics.precision_score(y_true, y_pred, average="micro", zero_division=0)
 
 
 def recall_score(gt, pred, threshold=0.5):
@@ -407,9 +408,8 @@ def micro_recall(y_true, y_pred, threshold=0.5):
         y_true = y_true.numpy()
         y_pred = y_pred.numpy()
 
-    y_pred = (y_pred > threshold).astype('int')
-    return metrics.recall_score(y_true, y_pred, average='micro', zero_division=0)
-
+    y_pred = (y_pred > threshold).astype("int")
+    return metrics.recall_score(y_true, y_pred, average="micro", zero_division=0)
 
 
 def specificity_per_class(label, threshold=0.5):
@@ -428,14 +428,15 @@ def specificity_per_class(label, threshold=0.5):
     def specificity_per_label(y_true, y_pred):
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return specificity(y_true, y_pred,threshold)
+        return specificity(y_true, y_pred, threshold)
 
     specificity_per_label.__name__ = f"specificityForLabel{class_names[label]}"
     return specificity_per_label
 
+
 def specificity(y_true, y_pred, threshold=0.5):
     """
-    calculate specificity 
+    calculate specificity
     Parameters
     ----------
     y_true: list of floats of numpy.ndarray
@@ -445,7 +446,7 @@ def specificity(y_true, y_pred, threshold=0.5):
     Returns
     -------
     macro_specificity: float
-       specificities 
+       specificities
     """
     if not isinstance(y_pred, np.ndarray):
         y_true = y_true.numpy()
@@ -453,13 +454,12 @@ def specificity(y_true, y_pred, threshold=0.5):
 
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
-    y_pred = (y_pred > threshold).astype('int')
-    
-    tn, fp, _, _ = confusion_matrix(y_true, y_pred,labels=[0,1]).ravel()
+    y_pred = (y_pred > threshold).astype("int")
+
+    tn, fp, _, _ = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     specificity = float(tn / (tn + fp)) if (tn + fp) != 0 else 0
 
     return specificity
-
 
 
 def micro_specificity(y_true, y_pred, threshold=0.5):
@@ -480,9 +480,9 @@ def micro_specificity(y_true, y_pred, threshold=0.5):
         y_pred = y_pred.numpy()
 
     y_true = y_true.flatten()
-    y_pred = (y_pred > threshold).astype('int')
+    y_pred = (y_pred > threshold).astype("int")
     y_pred = y_pred.flatten()
-    cm = confusion_matrix(y_true, y_pred, labels=[0,1])
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
 
     tn, fp, _, _ = cm.ravel()
     specificity = float(tn / (tn + fp)) if (tn + fp) != 0 else 0
@@ -531,16 +531,17 @@ def micro_sensitivity(y_true, y_pred, threshold=0.5):
 
     y_true = y_true.flatten()
     y_pred = y_pred.flatten()
-    y_pred = (y_pred > threshold).astype('int')
-    
-    cm = confusion_matrix(y_true, y_pred,labels=[0,1])
+    y_pred = (y_pred > threshold).astype("int")
+
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
 
     _, _, fn, tp = cm.ravel()
     sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
 
     return sensitivity
 
-def sensitivity(y_true, y_pred, threshold= 0.5):
+
+def sensitivity(y_true, y_pred, threshold=0.5):
     """
     gets multilabel y_true and y_pred  and calculate sensitivity for each label
     and returns mean of them.
@@ -559,10 +560,9 @@ def sensitivity(y_true, y_pred, threshold= 0.5):
         y_true = y_true.numpy()
         y_pred = y_pred.numpy()
 
-    y_pred = (y_true > threshold)
+    y_pred = y_true > threshold
 
-    _, _, fn, tp = confusion_matrix(y_true, y_pred,labels=[0,1]).ravel()
-
+    _, _, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
 
     sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
     return sensitivity
@@ -599,10 +599,12 @@ def get_specific_metrics(x_test, y_test, model, metrics, loss):
 
 def loss_per_class(label):
     """A wrapper function that calculates the loss of each disease based on the label.
+
     Parameters
     ----------
     label : int
         the class number of the disease
+
     returns
     -------
     function
@@ -611,9 +613,10 @@ def loss_per_class(label):
     class_names = ["N", "D", "G", "C", "A", "H", "M", "O"]
 
     def loss_per_label(y_true, y_pred):
+        bce = BinaryCrossentropy(from_logits=True)
         y_pred = y_pred.numpy()[:, label]
         y_true = y_true.numpy()[:, label]
-        return K.binary_crossentropy(y_true, y_pred)
+        return bce(y_true, y_pred).numpy()
 
     loss_per_label.__name__ = f"lossForLabel{class_names[label]}"
     return loss_per_label
