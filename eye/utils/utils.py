@@ -189,10 +189,9 @@ def save_predict_output(predictions, path):
 
 
 class MlflowCallback(tf.keras.callbacks.Callback):
-    
     def __init__(self, metric):
         super().__init__()
-        self.metric  = metric
+        self.metric = metric
 
     # This function will be called after each epoch.
     def on_epoch_end(self, epoch, logs=None):
@@ -200,9 +199,12 @@ class MlflowCallback(tf.keras.callbacks.Callback):
             return
         for metric in self.metric:
             mlflow.log_metric(metric.__name__, logs[metric.__name__], step=epoch)
-            mlflow.log_metric("val_" + metric.__name__, logs["val_" + metric.__name__], step=epoch)
+            mlflow.log_metric(
+                "val_" + metric.__name__, logs["val_" + metric.__name__], step=epoch
+            )
+        mlflow.log_metric("loss", logs["loss"], step=epoch)
+        mlflow.log_metric("val_loss", logs["val_loss"], step=epoch)
 
-       
     # This function will be called after training completes.
     def on_train_end(self, logs=None):
         mlflow.log_param("num_layers", len(self.model.layers))
@@ -322,7 +324,7 @@ def add_args_to_mlflow(args):
     ----------
     args : Namespace
         a namespace containing the arguments of argparse
-        
+
     Returns
     -------
     logs each argument in the mlflow

@@ -3,6 +3,8 @@ import argparse
 import mlflow
 import numpy as np
 import tensorflow as tf
+import warnings
+from distutils.util import strtobool
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.optimizers.schedules import (
     ExponentialDecay,
@@ -67,6 +69,13 @@ def parse_arguments():
         required=False,
     )
     parser.add_argument(
+        "--pre_epochs",
+        type=int,
+        default=2,
+        help="number of epochs you want to train your final classifier dense layers in transfer learning",
+        required=False,
+    )
+    parser.add_argument(
         "--patience",
         dest="patience",
         type=int,
@@ -85,8 +94,10 @@ def parse_arguments():
     parser.add_argument(
         "--imgnetweights",
         dest="imagenet_weights",
-        type=bool,
-        help="Whether to use imagenet weights or not?",
+        type=str,
+        choices=("True", "False"),
+        default="True",
+        help="determines to load imagenet pretrained weight or not",
         required=False,
     )
     parser.add_argument(
@@ -96,7 +107,6 @@ def parse_arguments():
         help="Path to the model's pretrained weights file",
         required=False,
     )
-
     parser.add_argument(
         "--data",
         dest="data_folder",
@@ -105,7 +115,6 @@ def parse_arguments():
         help="Path to the model's input data folder",
         required=True,
     )
-
     parser.add_argument(
         "--tv_label",
         dest="train_val_path",
@@ -114,7 +123,6 @@ def parse_arguments():
         help="Path to the .csv file of train, val labels.",
         required=True,
     )
-
     parser.add_argument(
         "--result",
         dest="result",
@@ -168,8 +176,9 @@ def parse_arguments():
     parser.add_argument(
         "--nesterov_flag",
         dest="nesterov",
-        type=bool,
-        default=True,
+        type=str,
+        choices=("True", "False"),
+        default="True",
         help="setting nesterov term of  optimizer: True or False",
     )
     parser.add_argument(
@@ -179,7 +188,6 @@ def parse_arguments():
         default="test-experiment",
         help="setting the experiment under which mlflow must be logged",
     )
-
     parser.add_argument(
         "--bg_scale",
         dest="bengraham_scale",
@@ -187,7 +195,6 @@ def parse_arguments():
         default=350,
         help="setting the scale for BenGraham transform",
     )
-
     parser.add_argument(
         "--shape",
         dest="shape",
@@ -195,15 +202,14 @@ def parse_arguments():
         default=224,
         help="setting shape of image for resize transform",
     )
-
     parser.add_argument(
         "--keep_AR",
         dest="keepAspectRatio",
-        type=bool,
-        default=False,
+        type=str,
+        choices=("True", "False"),
+        default="True",
         help="whether to keep aspect ratio for resize transform or not",
     )
-
     parser.add_argument(
         "--tv_frac",
         dest="train_val_fraction",
@@ -211,7 +217,6 @@ def parse_arguments():
         default=0.8,
         help="a fraction to split train and validation images",
     )
-
     parser.add_argument(
         "--data_frac",
         dest="data_fraction",
@@ -219,7 +224,6 @@ def parse_arguments():
         default=1,
         help="fraction of all the data we want to train on them",
     )
-
     parser.add_argument(
         "--ES_mode",
         dest="early_stopping_mode",
@@ -227,7 +231,6 @@ def parse_arguments():
         default="min",
         help="setting the mode of early stopping callback",
     )
-
     parser.add_argument(
         "--ES_monitor",
         dest="early_stopping_monitor",
@@ -245,8 +248,9 @@ def parse_arguments():
     parser.add_argument(
         "--Fine_Tuning",
         dest="Fine_Tuning",
-        type=bool,
-        default=True,
+        type=str,
+        choices=("True", "False"),
+        default="True",
         help="set if you want to fine tune the model or not.",
     )
     parser.add_argument(
@@ -278,6 +282,8 @@ def parse_arguments():
 def main():
     args = parse_arguments()
     tf.config.run_functions_eagerly(True)
+    np.seterr(divide="ignore", invalid="ignore")
+    warnings.filterwarnings("ignore")
 
     # Parameters
     num_classes = 8
@@ -292,7 +298,7 @@ def main():
         transforms=[
             RemovePadding(),
             BenGraham(args.bengraham_scale),
-            Resize((args.shape, args.shape), args.keepAspectRatio),
+            Resize((args.shape, args.shape), strtobool(args.keepAspectRatio)),
             KerasPreprocess(model_name="resnet"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
@@ -322,11 +328,12 @@ def main():
 
     # Model
     model = ResnetV2(num_classes=num_classes)
-    if args.imagenet_weights:
+    if strtobool(args.imagenet_weights):
         model.load_imagenet_weights()
-    # need to check
+        print("Imagenet weights loaded")
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
+        print("Weights loaded from the path given")
 
     # model trainable and non-trainable parameters
     trainableParams = np.sum(
@@ -372,7 +379,7 @@ def main():
         learning_rate=LR_schedule,
         decay=args.decay,
         momentum=args.momentum,
-        nesterov=args.nesterov,
+        nesterov=strtobool(args.nesterov),
     )
 
     # Metrics
@@ -414,9 +421,9 @@ def main():
         mode="min",
         monitor="val_loss",
     )
-    if args.Fine_Tuning:
+    if strtobool(args.Fine_Tuning):
         history = model.train(
-            epochs=args.epochs,
+            epochs=args.pre_epochs,
             loss=args.loss,
             metrics=metrics,
             callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
