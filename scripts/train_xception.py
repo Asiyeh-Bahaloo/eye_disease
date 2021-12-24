@@ -72,7 +72,7 @@ def parse_arguments():
     parser.add_argument(
         "--pre_epochs",
         type=int,
-        default=2,
+        default=0,
         help="number of epochs you want to train your final classifier dense layers in transfer learning",
         required=False,
     )
@@ -143,7 +143,6 @@ def parse_arguments():
         "--LR_type",
         dest="lr_type",
         type=str,
-        default="ED",
         help="Type of the LR scheduler you want to use. It can be 'ED':ExponentialDecay | 'CD': CosineDecay | 'ITD': InverseTimeDecay",
     )
     parser.add_argument(
@@ -247,14 +246,6 @@ def parse_arguments():
         help="setting the verbose of early stopping callback",
     )
     parser.add_argument(
-        "--Fine_Tuning",
-        dest="Fine_Tuning",
-        type=str,
-        choices=("True", "False"),
-        default="True",
-        help="set if you want to fine tune the model or not.",
-    )
-    parser.add_argument(
         "--dev_cmt",
         dest="last_Dev_commit",
         type=str,
@@ -353,35 +344,39 @@ def main():
     mlflow.log_param("Non-trainable params", nonTrainableParams)
 
     # Set Schedules for LR
-    if args.lr_type == "ED":
-        LR_schedule = ExponentialDecay(
-            initial_learning_rate=args.lr_init,
-            decay_steps=args.decay_step,
-            decay_rate=args.LR_decay,
-            staircase=True,
-        )
-    elif args.lr_type == "CD":
-        LR_schedule = CosineDecay(
-            initial_learning_rate=args.lr_init, decay_steps=args.decay_step
-        )
-    elif args.lr_type == "ITD":
-        LR_schedule = InverseTimeDecay(
-            initial_learning_rate=args.lr_init,
-            decay_steps=args.decay_step,
-            decay_rate=args.LR_decay,
-            staircase=True,
+    if args.lr_type in ["ED", "CD", "ITD"]:
+
+        if args.lr_type == "ED":
+            LR_schedule = ExponentialDecay(
+                initial_learning_rate=args.lr_init,
+                decay_steps=args.decay_step,
+                decay_rate=args.LR_decay,
+                staircase=True,
+            )
+        elif args.lr_type == "CD":
+            LR_schedule = CosineDecay(
+                initial_learning_rate=args.lr_init, decay_steps=args.decay_step
+            )
+        elif args.lr_type == "ITD":
+            LR_schedule = InverseTimeDecay(
+                initial_learning_rate=args.lr_init,
+                decay_steps=args.decay_step,
+                decay_rate=args.LR_decay,
+                staircase=True,
+            )
+        sgd = SGD(
+            learning_rate=LR_schedule,
+            momentum=args.momentum,
+            nesterov=strtobool(args.nesterov),
         )
     else:
-        raise ValueError("--LR_type must be in ['ED', 'CD', 'ITD']")
 
-    # Optimizer
-    # TODO: Define multiple optimizer
-    sgd = SGD(
-        learning_rate=LR_schedule,
-        decay=args.decay,
-        momentum=args.momentum,
-        nesterov=strtobool(args.nesterov),
-    )
+        sgd = SGD(
+            learning_rate=args.lr_init,
+            decay=args.decay,
+            momentum=args.momentum,
+            nesterov=strtobool(args.nesterov),
+        )
 
     # Metrics
     metrics = [
@@ -422,7 +417,7 @@ def main():
         mode="min",
         monitor="val_loss",
     )
-    if strtobool(args.Fine_Tuning):
+    if args.pre_epochs > 0:
         history = model.train(
             epochs=args.pre_epochs,
             loss=args.loss,
@@ -438,21 +433,21 @@ def main():
         )
         print("model trained successfuly(Backbone freezed).")
 
-    # Train
-    history = model.train(
-        epochs=args.epochs,
-        loss=args.loss,
-        metrics=metrics,
-        callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
-        optimizer=sgd,
-        freeze_backbone=False,
-        train_data_loader=train_DL,
-        validation_data_loader=val_DL,
-        batch_size=args.batch_size,
-        steps_per_epoch=len(train_DL),
-        shuffle=True,
-    )
-    print("model trained successfuly.")
+    if args.epochs > 0:
+        history = model.train(
+            epochs=args.epochs,
+            loss=args.loss,
+            metrics=metrics,
+            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
+            optimizer=sgd,
+            freeze_backbone=False,
+            train_data_loader=train_DL,
+            validation_data_loader=val_DL,
+            batch_size=args.batch_size,
+            steps_per_epoch=len(train_DL),
+            shuffle=True,
+        )
+        print("model trained successfuly.")
 
     # Save
     mlflow.log_artifact(model_file)
