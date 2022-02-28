@@ -109,19 +109,35 @@ def parse_arguments():
         required=False,
     )
     parser.add_argument(
-        "--data",
-        dest="data_folder",
+        "--data_train",
+        dest="data_folder_train",
         type=str,
         default="/Data",
         help="Path to the model's input data folder",
         required=True,
     )
     parser.add_argument(
-        "--tv_label",
-        dest="train_val_path",
+        "--data_val",
+        dest="data_folder_val",
         type=str,
         default="/Data",
-        help="Path to the .csv file of train, val labels.",
+        help="Path to the model's input data folder",
+        required=True,
+    )
+    parser.add_argument(
+        "--train_label",
+        dest="train_label",
+        type=str,
+        default="/Data",
+        help="Path to the .csv file of train labels.",
+        required=True,
+    )
+    parser.add_argument(
+        "--val_label",
+        dest="val_label",
+        type=str,
+        default="/Data",
+        help="Path to the .csv file of train labels.",
         required=True,
     )
     parser.add_argument(
@@ -288,9 +304,9 @@ def main():
     # create compose for both train and validation sets
     compose = Compose(
         transforms=[
-            RemovePadding(),
-            BenGraham(args.bengraham_scale),
-            Resize((args.shape, args.shape), strtobool(args.keepAspectRatio)),
+            # RemovePadding(),
+            # BenGraham(args.bengraham_scale),
+            # Resize((args.shape, args.shape), strtobool(args.keepAspectRatio)),
             KerasPreprocess(model_name="inception"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
@@ -298,21 +314,24 @@ def main():
         ]
     )
 
-    # split data
-    (df_train, df_val) = split_ODIR(
-        path_train_val=args.train_val_path, train_val_frac=args.train_val_fraction
-    )
     # create both train and validation sets
-    ODIR_dataset = ODIR_Dataset(
-        img_folder_path=args.data_folder,
-        csv_path=args.train_val_path,
+    train_dataset = ODIR_Dataset(
+        img_folder_path=args.data_folder_train,
+        csv_path=args.train_label,
         img_shape=(args.shape, args.shape),
         num_classes=8,
         frac=args.data_fraction,
         transforms=compose,
     )
-    train_dataset = ODIR_dataset.subset(df_train)
-    val_dataset = ODIR_dataset.subset(df_val)
+
+    val_dataset = ODIR_Dataset(
+        img_folder_path=args.data_folder_val,
+        csv_path=args.val_label,
+        img_shape=(args.shape, args.shape),
+        num_classes=8,
+        frac=args.data_fraction,
+        transforms=compose,
+    )
 
     # create both train and validation dataloaders
     train_DL = ODIR_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
