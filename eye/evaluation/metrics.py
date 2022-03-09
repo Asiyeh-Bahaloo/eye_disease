@@ -4,6 +4,7 @@ from sklearn.metrics import multilabel_confusion_matrix, confusion_matrix
 from keras import backend as K
 import numpy as np
 from tensorflow.keras.losses import BinaryCrossentropy
+import tensorflow as tf
 
 
 def kappa_score(gt, pred, threshold=0.5):
@@ -620,3 +621,25 @@ def loss_per_class(label):
 
     loss_per_label.__name__ = f"lossForLabel{class_names[label]}"
     return loss_per_label
+
+
+def loss(
+    y_true,
+    y_pred,
+):
+    """A function that calculates the loss of Model.
+
+        Parameters
+    ----------
+    y_true: list of floats of numpy.ndarray
+        true labels
+    y_pred: list of floats of numpy.ndarray
+        predicted labels
+    Returns
+    -------
+        loss
+    """
+    bce = BinaryCrossentropy(from_logits=True)
+    tensor_y_train = tf.convert_to_tensor(y_true, np.float32)
+    tensor_pred_train_y = tf.convert_to_tensor(y_pred, np.float32)
+    return bce(tensor_y_train, tensor_pred_train_y).numpy()
