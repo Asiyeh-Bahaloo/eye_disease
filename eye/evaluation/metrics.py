@@ -526,47 +526,11 @@ def micro_sensitivity(y_true, y_pred, threshold=0.5):
     -------
     float: sensitivity with micro average
     """
-    if not isinstance(y_pred, np.ndarray):
-        y_true = y_true.numpy()
-        y_pred = y_pred.numpy()
-
-    y_true = y_true.flatten()
-    y_pred = y_pred.flatten()
-    y_pred = (y_pred > threshold).astype("int")
-
-    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
-
-    _, _, fn, tp = cm.ravel()
-    sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
-
-    return sensitivity
-
-
-def sensitivity(y_true, y_pred, threshold=0.5):
-    """
-    gets multilabel y_true and y_pred  and calculate sensitivity for each label
-    and returns mean of them.
-    Parameters
-    ----------
-    y_true: list of floats of numpy.ndarray
-        true labels
-    y_pred: list of floats of numpy.ndarray
-        predicted labels
-    Returns
-    -------
-    macro_sensitivity: float
-       mean of sensitivity of each label
-    """
-    if not isinstance(y_pred, np.ndarray):
-        y_true = y_true.numpy()
-        y_pred = y_pred.numpy()
-
-    y_pred = y_true > threshold
-
-    _, _, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
-
-    sensitivity = float(tp / (tp + fn)) if (tp + fn) != 0 else 0
-    return sensitivity
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    possible_positives = tf.cast(possible_positives, tf.float32)
+    true_positives = tf.cast(true_positives, tf.float32)
+    return true_positives / (possible_positives + K.epsilon())
 
 
 def get_specific_metrics(x_test, y_test, model, metrics, loss):
