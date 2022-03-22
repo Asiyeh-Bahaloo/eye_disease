@@ -6,6 +6,7 @@ from xgboost import XGBClassifier
 import numpy as np
 import tensorflow as tf
 import pickle
+from tqdm import tqdm
 from sklearn.multioutput import MultiOutputClassifier
 from tensorflow.keras.losses import BinaryCrossentropy
 
@@ -141,7 +142,7 @@ class InceptionV3_Xgboost(KerasClsBaseModel):
         y_val_list = []
 
         # get each batch from data loader
-        for i in range(len(train_data_loader)):
+        for i in tqdm(range(len(train_data_loader))):
             x, y = train_data_loader.__iter__()
 
             # feat = self.model.predict(x)
@@ -152,7 +153,7 @@ class InceptionV3_Xgboost(KerasClsBaseModel):
         feat_from_cnn = np.concatenate(feat_list, axis=0)
         y_train = np.concatenate(y_list, axis=0)
 
-        for i in range(len(validation_data_loader)):
+        for i in tqdm(range(len(validation_data_loader))):
             x, y = validation_data_loader.__iter__()
 
             # feat = self.model.predict(x)
