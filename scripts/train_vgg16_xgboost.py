@@ -368,6 +368,7 @@ def main():
 
     # Set Schedules for LR
     if args.lr_type in ["ED", "CD", "ITD"]:
+
         if args.lr_type == "ED":
             LR_schedule = ExponentialDecay(
                 initial_learning_rate=args.lr_init,
@@ -386,23 +387,19 @@ def main():
                 decay_rate=args.LR_decay,
                 staircase=True,
             )
-            # Optimizer
         sgd = SGD(
             learning_rate=LR_schedule,
+            momentum=args.momentum,
+            nesterov=strtobool(args.nesterov),
+        )
+    else:
+
+        sgd = SGD(
+            learning_rate=args.lr_init,
             decay=args.decay,
             momentum=args.momentum,
             nesterov=strtobool(args.nesterov),
         )
-
-    else:
-        raise ValueError("--LR_type must be in ['ED', 'CD', 'ITD']")
-
-    sgd = SGD(
-        learning_rate=args.lr_init,
-        decay=args.decay,
-        momentum=args.momentum,
-        nesterov=strtobool(args.nesterov),
-    )
 
     # Metrics
     metrics = [

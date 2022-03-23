@@ -8,6 +8,7 @@ import tensorflow as tf
 import pickle
 from sklearn.multioutput import MultiOutputClassifier
 from tensorflow.keras.losses import BinaryCrossentropy
+from tensorflow.keras import models, layers
 
 from .model import KerasClsBaseModel
 
