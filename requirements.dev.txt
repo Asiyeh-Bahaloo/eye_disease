@@ -21,6 +21,8 @@ sphinx-rtd-theme
 torch
 torchvision
 pillow==8.2.0
+xgboost
+jupyter
 
 
 
