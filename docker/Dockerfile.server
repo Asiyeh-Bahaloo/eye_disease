@@ -31,6 +31,6 @@ RUN apt-get update && \
 WORKDIR /usr/src/app
 
 # install dependencies
-COPY ./requirements.dev.txt .
-RUN pip install --no-cache-dir -r requirements.dev.txt
+COPY ./requirements.server.txt .
+RUN pip install --no-cache-dir -r requirements.server.txt
 CMD ["bash", "-D"]
