@@ -13,6 +13,13 @@ services:
           - ./:/usr/src/app
           - /mnt/data:/data
           - /mnt/exps:/exps
+        deploy:
+          resources:
+            reservations:
+              devices:
+                - driver: nvidia
+                  count: 1
+                  capabilities: [gpu]
         environment:
           - PYTHONPATH=/usr/src/app
         working_dir: /usr/src/app
