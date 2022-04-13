@@ -71,6 +71,13 @@ def parse_arguments():
         required=False,
     )
     parser.add_argument(
+        "--pre_epochs",
+        type=int,
+        default=0,
+        help="number of epochs you want to train your final classifier dense layers in transfer learning",
+        required=False,
+    )
+    parser.add_argument(
         "--patience",
         dest="patience",
         type=int,
@@ -257,14 +264,6 @@ def parse_arguments():
         help="setting the verbose of early stopping callback",
     )
     parser.add_argument(
-        "--Fine_Tuning",
-        dest="Fine_Tuning",
-        type=str,
-        choices=("True", "False"),
-        default="True",
-        help="set if you want to fine tune the model or not.",
-    )
-    parser.add_argument(
         "--dev_cmt",
         dest="last_Dev_commit",
         type=str,
@@ -446,7 +445,7 @@ def main():
 
     # Train
 
-    if strtobool(args.Fine_Tuning):
+    if args.pre_epochs > 0:
         (
             history,
             training_result,
@@ -469,26 +468,27 @@ def main():
         print("model trained successfuly(Backbone freezed).")
 
     # Train
-    (
-        history,
-        training_result,
-        validation_result,
-        training_result_per_class,
-        validation_result_per_class,
-    ) = model.train(
-        epochs=args.epochs,
-        loss=args.loss,
-        metrics=metrics,
-        callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
-        optimizer=sgd,
-        freeze_backbone=False,
-        train_data_loader=train_DL,
-        validation_data_loader=val_DL,
-        batch_size=args.batch_size,
-        steps_per_epoch=len(train_DL),
-        shuffle=True,
-    )
-    print("model trained successfuly.")
+    if args.epochs > 0:
+        (
+            history,
+            training_result,
+            validation_result,
+            training_result_per_class,
+            validation_result_per_class,
+        ) = model.train(
+            epochs=args.epochs,
+            loss=args.loss,
+            metrics=metrics,
+            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
+            optimizer=sgd,
+            freeze_backbone=False,
+            train_data_loader=train_DL,
+            validation_data_loader=val_DL,
+            batch_size=args.batch_size,
+            steps_per_epoch=len(train_DL),
+            shuffle=True,
+        )
+        print("model trained successfuly.")
 
     # Save
     print("Saving models weights...")
