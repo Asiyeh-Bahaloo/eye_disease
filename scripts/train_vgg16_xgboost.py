@@ -507,14 +507,14 @@ def main():
 
     # Plot
 
-    print("plotting...")
-    accuracy_plot_figure = os.path.join(args.result, f"{tag}_accuracy.png")
-    metrics_plot_figure = os.path.join(args.result, f"{tag}_metrics.png")
-    p.plot_accuracy(history=history, path=accuracy_plot_figure)
-    p.plot_metrics(history=history, path=metrics_plot_figure)
-
-    mlflow.log_artifact(accuracy_plot_figure)
-    mlflow.log_artifact(metrics_plot_figure)
+    if args.epochs > 0:
+        print("plotting...")
+        accuracy_plot_figure = os.path.join(args.result, f"{tag}_accuracy.png")
+        metrics_plot_figure = os.path.join(args.result, f"{tag}_metrics.png")
+        p.plot_accuracy(history=history, path=accuracy_plot_figure)
+        p.plot_metrics(history=history, path=metrics_plot_figure)
+        mlflow.log_artifact(accuracy_plot_figure)
+        mlflow.log_artifact(metrics_plot_figure)
 
     print("ordinary:")
     print(training_result)
@@ -524,6 +524,7 @@ def main():
     for key, val in validation_result.items():
         mlflow.log_metric("training_" + key, val)
 
+    print("per class:")
     print(training_result_per_class)
     for key, val in training_result_per_class.items():
         mlflow.log_metric(key, val)
