@@ -297,6 +297,7 @@ def main():
     # Parameters
     num_classes = 8
     tag = "Vgg16_with_XGboost"
+
     mlflow.set_experiment(args.experiment)
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", tag)
@@ -307,7 +308,7 @@ def main():
             # RemovePadding(),
             # BenGraham(350),
             # Resize((224, 224), False),
-            KerasPreprocess(model_name="inception"),
+            KerasPreprocess(model_name="vgg16"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
@@ -493,7 +494,7 @@ def main():
     # Save
     print("Saving models weights...")
     CNN_file = os.path.join(args.result, f"model_weights_{tag}.h5")
-    xgboost_file = os.path.join(args.result, f"Xgboost_{tag}.pickle.dat")
+    xgboost_file = os.path.join(args.result, f"Xgboost_weights{tag}.pickle.dat")
     model.save(path=CNN_file, xgboost_path=xgboost_file)
 
     mlflow.log_artifact(CNN_file)
