@@ -454,7 +454,7 @@ def main():
             training_result_per_class,
             validation_result_per_class,
         ) = model.train(
-            epochs=args.epochs,
+            epochs=args.pre_epochs,
             loss=args.loss,
             metrics=metrics,
             callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
