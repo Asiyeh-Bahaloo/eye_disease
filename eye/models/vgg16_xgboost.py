@@ -237,9 +237,7 @@ class Vgg16_Xgboost(KerasClsBaseModel):
             )
 
         # pop the last layer
-        # print(f"weights1= {self.model.layers[-2].get_weights()}")
-        model2 = Model(self.model.input, self.model.layers[-2].output)
-        # print(f"weights2= {model2.layers[-1].get_weights()}")
+        self.model.pop()
 
         feat_list = []
         y_list = []
@@ -250,8 +248,7 @@ class Vgg16_Xgboost(KerasClsBaseModel):
         for i in tqdm(range(len(train_data_loader))):
             x, y = train_data_loader.__iter__()
 
-            # feat = self.model.predict(x)
-            feat = model2.predict(x)
+            feat = self.model.predict(x)
             feat_list.append(feat)
             y_list.append(y)
 
@@ -261,8 +258,7 @@ class Vgg16_Xgboost(KerasClsBaseModel):
         for i in tqdm(range(len(validation_data_loader))):
             x, y = validation_data_loader.__iter__()
 
-            # feat = self.model.predict(x)
-            feat = model2.predict(x)
+            feat = self.model.predict(x)
             feat_val_list.append(feat)
             y_val_list.append(y)
 
