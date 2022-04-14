@@ -265,7 +265,7 @@ class Vgg16_Xgboost(KerasClsBaseModel):
         feat_val_from_cnn = np.concatenate(feat_val_list, axis=0)
         y_val = np.concatenate(y_val_list, axis=0)
 
-        ## Feed features extracted from Inception_V3 model to XGBoost classifier
+        ## Feed features extracted from VGG16 model to XGBoost classifier
 
         print(
             f"y_train shape is:{y_train.shape}, features shape is: {feat_from_cnn.shape}"
