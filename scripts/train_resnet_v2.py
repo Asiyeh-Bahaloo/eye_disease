@@ -345,21 +345,9 @@ def main():
         model.load_weights(path=args.weights_path)
         print("Weights loaded from the path given")
 
-    # model trainable and non-trainable parameters
-    trainableParams = np.sum(
-        [np.prod(v.get_shape()) for v in model.model.trainable_weights]
-    )
-    nonTrainableParams = np.sum(
-        [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
-    )
-    totalParams = trainableParams + nonTrainableParams
-
     add_args_to_mlflow(args)
     mlflow.log_param("Training data size", len(train_dataset))
     mlflow.log_param("Validation data size", len(val_dataset))
-    mlflow.log_param("Total params", totalParams)
-    mlflow.log_param("Trainable params", trainableParams)
-    mlflow.log_param("Non-trainable params", nonTrainableParams)
 
     # Set Schedules for LR
     if args.lr_type in ["ED", "CD", "ITD"]:
@@ -452,6 +440,19 @@ def main():
         )
         print("model trained successfuly(Backbone freezed).")
 
+        # model trainable and non-trainable parameters
+        trainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+        )
+        nonTrainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
+        )
+        totalParams = trainableParams + nonTrainableParams
+
+        mlflow.log_param("Total params Model freezed", totalParams)
+        mlflow.log_param("Trainable params Model freezed", trainableParams)
+        mlflow.log_param("Non-trainable params Model freezed", nonTrainableParams)
+
     if args.epochs > 0:
         history = model.train(
             epochs=args.epochs,
@@ -467,6 +468,19 @@ def main():
             shuffle=True,
         )
         print("model trained successfuly.")
+
+        # model trainable and non-trainable parameters
+        trainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+        )
+        nonTrainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
+        )
+        totalParams = trainableParams + nonTrainableParams
+
+        mlflow.log_param("Total params Model NOT freezed", totalParams)
+        mlflow.log_param("Trainable params Model NOT freezed", trainableParams)
+        mlflow.log_param("Non-trainable params Model NOT freezed", nonTrainableParams)
 
     # Save
     mlflow.log_artifact(model_file)
