@@ -519,18 +519,30 @@ def main():
     print("ordinary:")
     print(training_result)
     for key, val in training_result.items():
-        mlflow.log_metric("training_" + key, val)
+        try:
+            mlflow.log_metric(key, val)
+        except:
+            mlflow.log_metric(key, val.numpy())
 
     for key, val in validation_result.items():
-        mlflow.log_metric("training_" + key, val)
+        try:
+            mlflow.log_metric("val_" + key, val)
+        except:
+            mlflow.log_metric("val_" + key, val.numpy())
 
     print("per class:")
     print(training_result_per_class)
     for key, val in training_result_per_class.items():
-        mlflow.log_metric(key, val)
+        try:
+            mlflow.log_metric(key, val)
+        except:
+            mlflow.log_metric(key, val.numpy())
 
     for key, val in validation_result_per_class.items():
-        mlflow.log_metric(key, val)
+        try:
+            mlflow.log_metric(key, val)
+        except:
+            mlflow.log_metric(key, val.numpy())
 
     mlflow.end_run()
 
