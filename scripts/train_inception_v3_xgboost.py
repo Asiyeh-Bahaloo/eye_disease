@@ -316,22 +316,6 @@ def main():
         ]
     )
 
-    # split data
-    # (df_train, df_val) = split_ODIR(
-    #     path_train_val=args.train_val_path, train_val_frac=args.train_val_fraction
-    # )
-    # # create both train and validation sets
-    # ODIR_dataset = ODIR_Dataset(
-    #     img_folder_path=args.data_folder,
-    #     csv_path=args.train_val_path,
-    #     img_shape=(args.shape, args.shape),
-    #     num_classes=8,
-    #     frac=args.data_fraction,
-    #     transforms=compose,
-    # )
-    # train_dataset = ODIR_dataset.subset(df_train)
-    # val_dataset = ODIR_dataset.subset(df_val)
-
     train_dataset = ODIR_Dataset(
         img_folder_path=args.data_folder_train,
         csv_path=args.train_label,
@@ -362,22 +346,9 @@ def main():
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
 
-    # model trainable and non-trainable parameters
-
-    trainableParams = np.sum(
-        [np.prod(v.get_shape()) for v in model.model.trainable_weights]
-    )
-    nonTrainableParams = np.sum(
-        [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
-    )
-    totalParams = trainableParams + nonTrainableParams
-
     add_args_to_mlflow(args)
     mlflow.log_param("Training data size", len(train_dataset))
     mlflow.log_param("Validation data size", len(val_dataset))
-    mlflow.log_param("Total params", totalParams)
-    mlflow.log_param("Trainable params", trainableParams)
-    mlflow.log_param("Non-trainable params", nonTrainableParams)
 
     # Set Schedules for LR
     if args.lr_type in ["ED", "CD", "ITD"]:
@@ -481,6 +452,19 @@ def main():
         )
         print("model trained successfuly(Backbone freezed).")
 
+        # model trainable and non-trainable parameters
+        trainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+        )
+        nonTrainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
+        )
+        totalParams = trainableParams + nonTrainableParams
+
+        mlflow.log_param("Total params Model freezed", totalParams)
+        mlflow.log_param("Trainable params Model freezed", trainableParams)
+        mlflow.log_param("Non-trainable params Model freezed", nonTrainableParams)
+
     # Train
     if args.epochs > 0:
         (
@@ -503,6 +487,19 @@ def main():
             shuffle=True,
         )
         print("model trained successfuly.")
+
+        # model trainable and non-trainable parameters
+        trainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+        )
+        nonTrainableParams = np.sum(
+            [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
+        )
+        totalParams = trainableParams + nonTrainableParams
+
+        mlflow.log_param("Total params Model NOT freezed", totalParams)
+        mlflow.log_param("Trainable params Model NOT freezed", trainableParams)
+        mlflow.log_param("Non-trainable params Model NOT freezed", nonTrainableParams)
 
     # Save
     print("Saving models weights...")
