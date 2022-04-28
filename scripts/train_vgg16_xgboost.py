@@ -361,7 +361,6 @@ def main():
                 initial_learning_rate=args.lr_init,
                 decay_steps=args.decay_step,
                 decay_rate=args.LR_decay,
-                staircase=True,
             )
         elif args.lr_type == "CD":
             LR_schedule = CosineDecay(
@@ -372,7 +371,6 @@ def main():
                 initial_learning_rate=args.lr_init,
                 decay_steps=args.decay_step,
                 decay_rate=args.LR_decay,
-                staircase=True,
             )
         sgd = SGD(
             learning_rate=LR_schedule,
@@ -431,8 +429,9 @@ def main():
         monitor="val_loss",
     )
 
-    # Train
+    mlfCallback = MlflowCallback(metrics, sgd)
 
+    # Train
     if args.pre_epochs > 0:
         (
             history,
@@ -444,7 +443,7 @@ def main():
             epochs=args.pre_epochs,
             loss=args.loss,
             metrics=metrics,
-            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
+            callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
             train_data_loader=train_DL,
@@ -480,7 +479,7 @@ def main():
             epochs=args.epochs,
             loss=args.loss,
             metrics=metrics,
-            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
+            callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=False,
             train_data_loader=train_DL,
