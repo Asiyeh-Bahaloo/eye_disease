@@ -372,6 +372,7 @@ def main():
     mlflow.log_param("Validation_1 data size", len(val_dataset1))
     mlflow.log_param("Training_2 data size", len(train_dataset2))
     mlflow.log_param("Validation_2 data size", len(val_dataset2))
+
     # Set Schedules for LR
     if args.lr_type in ["ED", "CD", "ITD"]:
 
@@ -380,7 +381,6 @@ def main():
                 initial_learning_rate=args.lr_init,
                 decay_steps=args.decay_step,
                 decay_rate=args.LR_decay,
-                staircase=True,
             )
         elif args.lr_type == "CD":
             LR_schedule = CosineDecay(
@@ -391,7 +391,6 @@ def main():
                 initial_learning_rate=args.lr_init,
                 decay_steps=args.decay_step,
                 decay_rate=args.LR_decay,
-                staircase=True,
             )
         sgd = SGD(
             learning_rate=LR_schedule,
@@ -446,12 +445,15 @@ def main():
         mode="min",
         monitor="val_loss",
     )
+
+    mlfCallback = MlflowCallback(metrics, sgd)
+
     if args.pre_epochs > 0:
         history = model.train(
             epochs=args.pre_epochs,
             loss=args.loss,
             metrics=metrics,
-            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
+            callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
             train_data_loader=train_DL,
@@ -480,7 +482,7 @@ def main():
             epochs=args.epochs,
             loss=args.loss,
             metrics=metrics,
-            callbacks=[MlflowCallback(metrics), earlyStoppingCallback, modelCheckpoint],
+            callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=False,
             train_data_loader=train_DL,

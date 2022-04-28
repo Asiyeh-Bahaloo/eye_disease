@@ -189,9 +189,10 @@ def save_predict_output(predictions, path):
 
 
 class MlflowCallback(tf.keras.callbacks.Callback):
-    def __init__(self, metric):
+    def __init__(self, metric, optimizer):
         super().__init__()
         self.metric = metric
+        self.optimizer = optimizer
 
     # This function will be called after each epoch.
     def on_epoch_end(self, epoch, logs=None):
@@ -204,6 +205,9 @@ class MlflowCallback(tf.keras.callbacks.Callback):
             )
         mlflow.log_metric("loss", logs["loss"], step=epoch)
         mlflow.log_metric("val_loss", logs["val_loss"], step=epoch)
+        mlflow.log_metric(
+            "LR", self.optimizer._decayed_lr(tf.float64).numpy(), step=epoch
+        )
 
     # This function will be called after training completes.
     def on_train_end(self, logs=None):
