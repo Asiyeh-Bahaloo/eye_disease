@@ -63,7 +63,7 @@ class InceptionResNetV2(KerasClsBaseModel):
             name=name,
         )(x)
         if dropout:
-            x = Dropout(dropout_rate)(x)
+            x = Dropout(dropout_rate, training=True)(x)
         if not use_bias:
             bn_axis = 1 if backend.image_data_format() == "channels_first" else 3
             bn_name = None if name is None else name + "_bn"
