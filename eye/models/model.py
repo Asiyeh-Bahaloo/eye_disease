@@ -100,6 +100,7 @@ class KerasClsBaseModel(BaseModel):
         X_val=None,
         Y_val=None,
         batch_size=32,
+        last_freeze_num=2,
         **kwargs,
     ):
         """train : trains the model by input data
@@ -136,7 +137,7 @@ class KerasClsBaseModel(BaseModel):
         """
 
         model_layers = self.model.layers
-        for l in model_layers[:-2]:
+        for l in model_layers[:-last_freeze_num]:
             if freeze_backbone:
                 l.trainable = False
             else:
