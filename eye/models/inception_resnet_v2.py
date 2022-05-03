@@ -63,7 +63,7 @@ class InceptionResNetV2(KerasClsBaseModel):
             name=name,
         )(x)
         if dropout:
-            x = Dropout(dropout_rate, training=True)(x)
+            x = Dropout(dropout_rate)(x, training=True)
         if not use_bias:
             bn_axis = 1 if backend.image_data_format() == "channels_first" else 3
             bn_name = None if name is None else name + "_bn"
@@ -195,10 +195,10 @@ class InceptionResNetV2(KerasClsBaseModel):
         )
         x = self.conv2d_bn(x, 32, 3, dropout=False, dropout_rate=0.25, padding="valid")
         x = self.conv2d_bn(x, 64, 3, dropout=False, dropout_rate=0.25)
-        x = layers.MaxPooling2D(3, dropout=False, dropout_rate=0.25, strides=2)(x)
+        x = layers.MaxPooling2D(3, strides=2)(x)
         x = self.conv2d_bn(x, 80, 1, dropout=False, dropout_rate=0.25, padding="valid")
         x = self.conv2d_bn(x, 192, 3, dropout=False, dropout_rate=0.25, padding="valid")
-        x = layers.MaxPooling2D(3, dropout=False, dropout_rate=0.255, strides=2)(x)
+        x = layers.MaxPooling2D(3, strides=2)(x)
 
         # Mixed 5b (Inception-A block): 35 x 35 x 320
         branch_0 = self.conv2d_bn(x, 96, 1, dropout=False, dropout_rate=0.25)
@@ -207,9 +207,7 @@ class InceptionResNetV2(KerasClsBaseModel):
         branch_2 = self.conv2d_bn(x, 64, 1, dropout=False, dropout_rate=0.25)
         branch_2 = self.conv2d_bn(branch_2, 96, 3, dropout=False, dropout_rate=0.25)
         branch_2 = self.conv2d_bn(branch_2, 96, 3, dropout=False, dropout_rate=0.25)
-        branch_pool = layers.AveragePooling2D(
-            3, dropout=False, dropout_rate=0.25, strides=1, padding="same"
-        )(x)
+        branch_pool = layers.AveragePooling2D(3, strides=1, padding="same")(x)
         branch_pool = self.conv2d_bn(
             branch_pool, 64, 1, dropout=False, dropout_rate=0.25
         )
@@ -280,9 +278,7 @@ class InceptionResNetV2(KerasClsBaseModel):
             strides=2,
             padding="valid",
         )
-        branch_pool = layers.MaxPooling2D(
-            3, dropout=True, dropout_rate=0.25, strides=2, padding="valid"
-        )(x)
+        branch_pool = layers.MaxPooling2D(3, strides=2, padding="valid")(x)
         branches = [branch_0, branch_1, branch_2, branch_pool]
         x = layers.Concatenate(axis=channel_axis, name="mixed_7a")(branches)
 
