@@ -439,6 +439,7 @@ def main():
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
+            last_freeze_num=141,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
             batch_size=args.batch_size,
