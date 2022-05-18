@@ -30,7 +30,7 @@ class Xception(KerasClsBaseModel):
         number of classes of the classification task
     """
 
-    def __init__(self, num_classes, input_shape):
+    def __init__(self, num_classes, input_shape, dropout_rate=None):
         """__init__ set number of classes and builds model architecture
 
         Parameters
@@ -41,9 +41,10 @@ class Xception(KerasClsBaseModel):
         # super().__init__(num_classes)
         self.num_classes = num_classes
         self.input_shape = input_shape
-        self.model = self.build(self.num_classes, self.input_shape)
+        self.dropout_rate = dropout_rate
+        self.model = self.build(self.num_classes, self.input_shape, self.dropout_rate)
 
-    def build(self, num_classes, input_shape):
+    def build(self, num_classes, input_shape, dropout_rate=None):
         """builds the model architecture by default uses random weights
 
         Parameters
@@ -141,6 +142,10 @@ class Xception(KerasClsBaseModel):
             x = layers.SeparableConv2D(
                 728, (3, 3), padding="same", use_bias=False, name=prefix + "_sepconv1"
             )(x)
+            if (
+                dropout_rate is not None and i == 7
+            ):  ## put drop just for the last iteration in loop , because we want 8 dropouts totaaly: 3+5
+                x = layers.Dropout(dropout_rate)(x, training=True)
             x = layers.BatchNormalization(
                 axis=channel_axis, name=prefix + "_sepconv1_bn"
             )(x)
@@ -148,6 +153,8 @@ class Xception(KerasClsBaseModel):
             x = layers.SeparableConv2D(
                 728, (3, 3), padding="same", use_bias=False, name=prefix + "_sepconv2"
             )(x)
+            if dropout_rate is not None and i == 7:
+                x = layers.Dropout(dropout_rate)(x, training=True)
             x = layers.BatchNormalization(
                 axis=channel_axis, name=prefix + "_sepconv2_bn"
             )(x)
@@ -155,6 +162,8 @@ class Xception(KerasClsBaseModel):
             x = layers.SeparableConv2D(
                 728, (3, 3), padding="same", use_bias=False, name=prefix + "_sepconv3"
             )(x)
+            if dropout_rate is not None and i == 7:
+                x = layers.Dropout(dropout_rate)(x, training=True)
             x = layers.BatchNormalization(
                 axis=channel_axis, name=prefix + "_sepconv3_bn"
             )(x)
@@ -164,17 +173,23 @@ class Xception(KerasClsBaseModel):
         residual = layers.Conv2D(
             1024, (1, 1), strides=(2, 2), padding="same", use_bias=False
         )(x)
+        if dropout_rate is not None:
+            x = layers.Dropout(dropout_rate)(x, training=True)
         residual = layers.BatchNormalization(axis=channel_axis)(residual)
 
         x = layers.Activation("relu", name="block13_sepconv1_act")(x)
         x = layers.SeparableConv2D(
             728, (3, 3), padding="same", use_bias=False, name="block13_sepconv1"
         )(x)
+        if dropout_rate is not None:
+            x = layers.Dropout(dropout_rate)(x, training=True)
         x = layers.BatchNormalization(axis=channel_axis, name="block13_sepconv1_bn")(x)
         x = layers.Activation("relu", name="block13_sepconv2_act")(x)
         x = layers.SeparableConv2D(
             1024, (3, 3), padding="same", use_bias=False, name="block13_sepconv2"
         )(x)
+        if dropout_rate is not None:
+            x = layers.Dropout(dropout_rate)(x, training=True)
         x = layers.BatchNormalization(axis=channel_axis, name="block13_sepconv2_bn")(x)
 
         x = layers.MaxPooling2D(
@@ -185,12 +200,16 @@ class Xception(KerasClsBaseModel):
         x = layers.SeparableConv2D(
             1536, (3, 3), padding="same", use_bias=False, name="block14_sepconv1"
         )(x)
+        if dropout_rate is not None:
+            x = layers.Dropout(dropout_rate)(x, training=True)
         x = layers.BatchNormalization(axis=channel_axis, name="block14_sepconv1_bn")(x)
         x = layers.Activation("relu", name="block14_sepconv1_act")(x)
 
         x = layers.SeparableConv2D(
             2048, (3, 3), padding="same", use_bias=False, name="block14_sepconv2"
         )(x)
+        if dropout_rate is not None:
+            x = layers.Dropout(dropout_rate)(x, training=True)
         x = layers.BatchNormalization(axis=channel_axis, name="block14_sepconv2_bn")(x)
         x = layers.Activation("relu", name="block14_sepconv2_act")(x)
 
@@ -217,6 +236,7 @@ class Xception(KerasClsBaseModel):
         )
         self.model.load_weights(weights_path)
 
+        x = self.model.layers[-1].output
         x = layers.Dense(1024, activation="relu")(x)
         x = layers.Dense(self.num_classes, activation="sigmoid")(x)
 

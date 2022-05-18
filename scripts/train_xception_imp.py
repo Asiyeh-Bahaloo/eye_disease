@@ -338,7 +338,11 @@ def main():
     val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
-    model = Xception(num_classes=num_classes, input_shape=(args.shape, args.shape, 3))
+    model = Xception(
+        num_classes=num_classes,
+        input_shape=(args.shape, args.shape, 3),
+        dropout_rate=0.25,
+    )
     if strtobool(args.imagenet_weights):
         model.load_imagenet_weights()
         print("Imagenet weights loaded")
@@ -433,6 +437,7 @@ def main():
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
+            last_freeze_num=36,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
             batch_size=args.batch_size,
