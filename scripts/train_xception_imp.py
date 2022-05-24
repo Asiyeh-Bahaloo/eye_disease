@@ -295,7 +295,7 @@ def main():
 
     # Parameters
     num_classes = 8
-    tag = "xception_imp"
+    tag = "xception_imp_88_unfreezed"
 
     mlflow.set_experiment(args.experiment)
     mlflow.start_run()
@@ -437,7 +437,7 @@ def main():
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
-            last_freeze_num=36,
+            last_freeze_num=88,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
             batch_size=args.batch_size,

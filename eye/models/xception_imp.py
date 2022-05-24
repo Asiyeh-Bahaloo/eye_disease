@@ -143,7 +143,7 @@ class Xception(KerasClsBaseModel):
                 728, (3, 3), padding="same", use_bias=False, name=prefix + "_sepconv1"
             )(x)
             if (
-                dropout_rate is not None and i == 7
+                dropout_rate is not None and i >= 3
             ):  ## put drop just for the last iteration in loop , because we want 8 dropouts totaaly: 3+5
                 x = layers.Dropout(dropout_rate)(x, training=True)
             x = layers.BatchNormalization(
@@ -153,7 +153,7 @@ class Xception(KerasClsBaseModel):
             x = layers.SeparableConv2D(
                 728, (3, 3), padding="same", use_bias=False, name=prefix + "_sepconv2"
             )(x)
-            if dropout_rate is not None and i == 7:
+            if dropout_rate is not None and i >= 3:
                 x = layers.Dropout(dropout_rate)(x, training=True)
             x = layers.BatchNormalization(
                 axis=channel_axis, name=prefix + "_sepconv2_bn"
@@ -162,7 +162,7 @@ class Xception(KerasClsBaseModel):
             x = layers.SeparableConv2D(
                 728, (3, 3), padding="same", use_bias=False, name=prefix + "_sepconv3"
             )(x)
-            if dropout_rate is not None and i == 7:
+            if dropout_rate is not None and i >= 3:
                 x = layers.Dropout(dropout_rate)(x, training=True)
             x = layers.BatchNormalization(
                 axis=channel_axis, name=prefix + "_sepconv3_bn"
@@ -220,6 +220,20 @@ class Xception(KerasClsBaseModel):
         inputs = img_input
         model = training.Model(inputs, x, name="xception")
 
+        # c = 0
+        # d = 0
+        # e = 0
+        # for i in model.layers:
+        #     if "Conv2D" in str(i):
+        #         c += 1
+        #     if "ropout" in str(i):
+        #         d += 1
+        #     if d > 0:
+        #         e += 1
+
+        # print(c, d, e)
+        # print(len(model.layers))
+        # print(model.summary())
         return model
 
     def load_imagenet_weights(self):
