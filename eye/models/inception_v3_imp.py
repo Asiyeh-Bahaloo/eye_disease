@@ -1,12 +1,12 @@
 import tensorflow as tf
 from keras import backend
-from keras.applications import imagenet_utils
 from keras.engine import training
+import h5py
+import numpy as np
+
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from keras import layers
 from keras.utils import data_utils
-from keras.utils import layer_utils
-from tensorflow.python.util.tf_export import keras_export
 
 from .model import KerasClsBaseModel
 
@@ -14,6 +14,50 @@ WEIGHTS_PATH_NO_TOP = (
     "https://storage.googleapis.com/tensorflow/keras-applications/"
     "inception_v3/inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5"
 )
+
+
+def load_attributes_from_hdf5_group(group, name):
+
+    """Loads attributes of the specified name from the HDF5 group.
+    This method deals with an inherent problem
+    of HDF5 file which is not able to store
+    data larger than HDF5_OBJECT_HEADER_LIMIT bytes.
+    Args:
+        group: A pointer to a HDF5 group.
+        name: A name of the attributes to load.
+    Returns:
+        data: Attributes data.
+    """
+    if name in group.attrs:
+        data = [
+            n.decode("utf8") if hasattr(n, "decode") else n for n in group.attrs[name]
+        ]
+    else:
+        data = []
+        chunk_id = 0
+        while "%s%d" % (name, chunk_id) in group.attrs:
+            data.extend(
+                [
+                    n.decode("utf8") if hasattr(n, "decode") else n
+                    for n in group.attrs["%s%d" % (name, chunk_id)]
+                ]
+            )
+            chunk_id += 1
+    return data
+
+
+def load_subset_weights_from_hdf5_group(f):
+    """Load layer weights of a model from hdf5.
+    Args:
+        f: A pointer to a HDF5 group.
+    Returns:
+        List of NumPy arrays of the weight values.
+    Raises:
+        ValueError: in case of mismatch between provided model
+            and weights file.
+    """
+    weight_names = load_attributes_from_hdf5_group(f, "weight_names")
+    return [np.asarray(f[weight_name]) for weight_name in weight_names]
 
 
 class InceptionV3(KerasClsBaseModel):
@@ -260,19 +304,19 @@ class InceptionV3(KerasClsBaseModel):
 
         # mixed 9: 8 x 8 x 2048
         for i in range(2):
-            branch1x1 = self.conv2d_bn(x, 320, 1, 1)
+            branch1x1 = self.conv2d_bn(x, 320, 1, 1, dropout_rate=0.25)
 
             branch3x3 = self.conv2d_bn(x, 384, 1, 1, dropout_rate=0.25)
             branch3x3_1 = self.conv2d_bn(branch3x3, 384, 1, 3, dropout_rate=0.25)
-            branch3x3_2 = self.conv2d_bn(branch3x3, 384, 3, 1)
+            branch3x3_2 = self.conv2d_bn(branch3x3, 384, 3, 1, dropout_rate=0.25)
             branch3x3 = layers.Concatenate(axis=channel_axis, name="mixed9_" + str(i))(
                 [branch3x3_1, branch3x3_2]
             )
 
             branch3x3dbl = self.conv2d_bn(x, 448, 1, 1, dropout_rate=0.25)
             branch3x3dbl = self.conv2d_bn(branch3x3dbl, 384, 3, 3, dropout_rate=0.25)
-            branch3x3dbl_1 = self.conv2d_bn(branch3x3dbl, 384, 1, 3)
-            branch3x3dbl_2 = self.conv2d_bn(branch3x3dbl, 384, 3, 1)
+            branch3x3dbl_1 = self.conv2d_bn(branch3x3dbl, 384, 1, 3, dropout_rate=0.25)
+            branch3x3dbl_2 = self.conv2d_bn(branch3x3dbl, 384, 3, 1, dropout_rate=0.25)
             branch3x3dbl = layers.Concatenate(axis=channel_axis)(
                 [branch3x3dbl_1, branch3x3dbl_2]
             )
@@ -280,7 +324,7 @@ class InceptionV3(KerasClsBaseModel):
             branch_pool = layers.AveragePooling2D(
                 (3, 3), strides=(1, 1), padding="same"
             )(x)
-            branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1)
+            branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=0.25)
             x = layers.Concatenate(
                 axis=channel_axis,
                 name="mixed" + str(9 + i),
@@ -310,6 +354,69 @@ class InceptionV3(KerasClsBaseModel):
             file_hash="bcbd6486424b2319ff4ef7d526e38f63",
         )
         self.model.load_weights(weights_path)
+        x = layers.Dense(1024, activation="relu")(x)
+        x = layers.Dense(self.num_classes, activation="sigmoid")(x)
+
+        self.model = training.Model(self.model.input, x)
+
+    def load_imagenet_weights_manual(self):
+        x = self.model.layers[-3].output
+        self.model = training.Model(self.model.input, x)
+
+        weights_path = data_utils.get_file(
+            "inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5",
+            WEIGHTS_PATH_NO_TOP,
+            cache_subdir="models",
+            file_hash="bcbd6486424b2319ff4ef7d526e38f63",
+        )
+
+        with h5py.File(weights_path, "r") as f:
+            # changing model layer names
+            for layer in self.model.layers:
+                # print(f"$$$$$$$$before: {layer.name}")
+                if layer.name in ["input_1", "mixed9_0", "mixed9_1"]:
+                    continue
+                if layer.name in [
+                    "conv2d",
+                    "batch_normalization",
+                    "activation",
+                    "max_pooling2d",
+                    "average_pooling2d",
+                    "dropout",
+                    "concatenate",
+                ]:
+                    layer._name = layer.name + "_1"
+                else:
+                    idx = layer.name.rfind("_")
+                    if idx != -1:
+                        try:
+                            layer._name = layer.name[: idx + 1] + str(
+                                int(layer.name[idx + 1 :]) + 1
+                            )
+                            # print(f"$$$$$$$$AFTERR: {layer.name}")
+                        except:
+                            continue
+
+            # model_layer_name = []
+            # for layer in self.model.layers:
+            #   model_layer_name.append(layer.name)
+
+            file_layer_names = load_attributes_from_hdf5_group(f, "layer_names")
+
+            # print("########model:")
+            # print(sorted(model_layer_name))
+            # print("########file:")
+            # print(file_layer_names)
+
+            for layer_name in file_layer_names:
+                if (layer_name != "average_pooling2d_10") and (
+                    "batch_normalization" not in layer_name
+                ):
+                    # print(layer_name)
+                    layer = self.model.get_layer(layer_name)
+                    weight_values = load_subset_weights_from_hdf5_group(f[layer_name])
+                    layer.set_weights(weight_values)
+
         x = layers.Dense(1024, activation="relu")(x)
         x = layers.Dense(self.num_classes, activation="sigmoid")(x)
 
