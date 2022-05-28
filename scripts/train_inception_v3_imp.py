@@ -343,7 +343,7 @@ def main():
         num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
     )
     if strtobool(args.imagenet_weights):
-        model.load_imagenet_weights()
+        model.load_imagenet_weights_manual()
         print("Imagenet weights loaded")
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
