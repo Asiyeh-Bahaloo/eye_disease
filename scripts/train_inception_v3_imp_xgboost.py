@@ -13,7 +13,7 @@ from tensorflow.keras.optimizers.schedules import (
     InverseTimeDecay,
 )
 
-from eye.models.inception_v3_xgboost import InceptionV3_Xgboost
+from eye.models.inception_v3_imp_xgboost import InceptionV3_Xgboost
 from eye.utils import plotter_utils as p
 from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 from eye.data.dataloader import ODIR_Dataloader
@@ -298,7 +298,7 @@ def main():
 
     # Parameters
     num_classes = 8
-    tag = "inception_v3_with_XGboost"
+    tag = "inception_v3_imp_with_XGboost"
     mlflow.set_experiment(args.experiment)
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", tag)
@@ -339,7 +339,9 @@ def main():
     val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
-    model = InceptionV3_Xgboost(num_classes=num_classes)
+    model = InceptionV3_Xgboost(
+        num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+    )
 
     if strtobool(args.imagenet_weights):
         model.load_imagenet_weights()
@@ -528,15 +530,15 @@ def main():
     print(training_result)
     for key, val in training_result.items():
         try:
-            mlflow.log_metric(key, val)
+            mlflow.log_metric("training_" + key, val)
         except:
-            mlflow.log_metric(key, val.numpy())
+            mlflow.log_metric("training_" + key, val.numpy())
 
     for key, val in validation_result.items():
         try:
-            mlflow.log_metric("val_" + key, val)
+            mlflow.log_metric("validation_" + key, val)
         except:
-            mlflow.log_metric("val_" + key, val.numpy())
+            mlflow.log_metric("validation_" + key, val.numpy())
 
     print("per class:")
     print(training_result_per_class)
@@ -548,9 +550,9 @@ def main():
 
     for key, val in validation_result_per_class.items():
         try:
-            mlflow.log_metric("val" + key, val)
+            mlflow.log_metric(key, val)
         except:
-            mlflow.log_metric("val" + key, val.numpy())
+            mlflow.log_metric(key, val.numpy())
 
     mlflow.end_run()
 
