@@ -12,7 +12,7 @@ from tensorflow.keras.optimizers.schedules import (
     InverseTimeDecay,
 )
 
-from eye.models.inception_resnet_v2 import InceptionResNetV2
+from eye.models.resnet_v2_imp import InceptionResNetV2
 from eye.utils import plotter_utils as p
 from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 from eye.data.dataloader import ODIR_Dataloader
@@ -294,7 +294,7 @@ def main():
 
     # Parameters
     num_classes = 8
-    tag = "inception_resnet_v2"
+    tag = "inception_resnet_v2_imp"
 
     mlflow.set_experiment(args.experiment)
     mlflow.start_run()

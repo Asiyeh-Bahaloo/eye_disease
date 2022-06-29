@@ -343,27 +343,6 @@ class InceptionV3(KerasClsBaseModel):
         return model
 
     def load_imagenet_weights(self):
-        """load_imagenet_weights function used for loading pretrained weight of task imagenet
-
-        Here we only load the weights of the convolutional part
-        """
-
-        x = self.model.layers[-3].output
-        self.model = training.Model(self.model.input, x)
-
-        weights_path = data_utils.get_file(
-            "inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5",
-            WEIGHTS_PATH_NO_TOP,
-            cache_subdir="models",
-            file_hash="bcbd6486424b2319ff4ef7d526e38f63",
-        )
-        self.model.load_weights(weights_path)
-        x = layers.Dense(1024, activation="relu")(x)
-        x = layers.Dense(self.num_classes, activation="sigmoid")(x)
-
-        self.model = training.Model(self.model.input, x)
-
-    def load_imagenet_weights_manual(self):
         x = self.model.layers[-3].output
         self.model = training.Model(self.model.input, x)
 
