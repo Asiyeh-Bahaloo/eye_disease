@@ -259,7 +259,7 @@ class Mix_Dataloader(Sequence):
     This is our Dataloader class which gets two dataset objects and feeds batches to our model while training.
     """
 
-    def __init__(self, dataset1, dataset2, batch_size, frac):
+    def __init__(self, dataset1, dataset2, batch_size, frac=0.75):
         """
         Initializer of the class
 
