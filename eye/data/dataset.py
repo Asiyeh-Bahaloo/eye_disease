@@ -190,7 +190,6 @@ class Cataract_Dataset:
         num_classes,
         frac,
         transforms,
-        dataframe=None,
         random_state=2021,
     ):
         """
@@ -220,11 +219,52 @@ class Cataract_Dataset:
         self.num_classes = num_classes
         self.frac = frac
         self.transforms = transforms
+        self.df = (
+            self.get_Cataract_df()
+            .sample(frac=self.frac, random_state=random_state)
+            .reset_index(drop=True)
+        )
 
-        if isinstance(dataframe, pd.DataFrame):
-            self.df = dataframe.sample(
-                frac=frac, random_state=random_state
-            ).reset_index(drop=True)
+    def get_Cataract_df(self, random_state=2021):
+        """
+        This function makes the label dataframe for Cataract dataset
+
+        Parameters
+        ----------
+        Image_path : str
+            Path to the image folder of the cataract dataset. this folder must have 4 folders in it:
+            - 1_normal
+            - 2_cataract
+            - 2_glaucoma
+            - 3_retina_disease
+        random_state : int, optional
+            random_state used during this function, by default 2021
+
+        Returns
+        -------
+        DataFrames
+            df
+        """
+
+        df = pd.DataFrame(columns=["ID", "normal", "cataract", "glaucoma", "others"])
+
+        for idx1, filename in enumerate(
+            os.listdir(os.path.join(self.img_folder_path, "1_normal"))
+        ):
+            df.loc[idx1] = [filename, 1, 0, 0, 0]
+        for idx2, filename in enumerate(
+            os.listdir(os.path.join(self.img_folder_path, "2_cataract"))
+        ):
+            df.loc[idx2 + idx1 + 1] = [filename, 0, 1, 0, 0]
+        for idx3, filename in enumerate(
+            os.listdir(os.path.join(self.img_folder_path, "2_glaucoma"))
+        ):
+            df.loc[idx3 + idx2 + idx1 + 2] = [filename, 0, 0, 1, 0]
+
+        # shuffle dataset
+        df = df.sample(frac=1, random_state=random_state).reset_index(drop=True)
+
+        return df
 
     def subset(self, dataframe):
         """
