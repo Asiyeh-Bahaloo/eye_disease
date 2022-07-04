@@ -94,11 +94,9 @@ def parse_arguments():
     )
     parser.add_argument(
         "--imgnetweights",
-        dest="imagenet_weights",
+        dest="imagenet_weights_path",
         type=str,
-        choices=("True", "False"),
-        default="True",
-        help="determines to load imagenet pretrained weight or not",
+        help="Path to the image net pretrained weights file",
         required=False,
     )
     parser.add_argument(
@@ -340,11 +338,9 @@ def main():
 
     # Model
     model = Vgg16(num_classes=num_classes, input_shape=(args.shape, args.shape, 3))
-
-    if strtobool(args.imagenet_weights):
-        model.load_imagenet_weights()
+    if args.imagenet_weights_path is not None:
+        model.load_imagenet_weights(path=args.imagenet_weights_path)
         print("Imagenet weights loaded")
-
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)
         print("Weights loaded from the path given")
