@@ -1,4 +1,3 @@
-from cgitb import reset
 import os
 import argparse
 import mlflow
@@ -14,7 +13,15 @@ from tensorflow.keras.optimizers.schedules import (
     InverseTimeDecay,
 )
 
-from eye.models.resnet_with_svm import InceptionResNetV2
+##### Import Backbones #####
+from eye.models.inception_v3_imp import InceptionV3
+from eye.models.vgg16 import Vgg16
+from eye.models.resnet_v2_imp import InceptionResNetV2
+from eye.models.xception_imp import Xception
+
+############################
+
+from eye.models.xgboost import XGBoost
 from eye.utils import plotter_utils as p
 from eye.utils.utils import MlflowCallback, split_ODIR, add_args_to_mlflow
 from eye.data.dataloader import ODIR_Dataloader
@@ -55,7 +62,7 @@ from eye.evaluation.metrics import (
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Arguments for training the resnet with XGBoost classifier model"
+        description="Arguments for training the Inception_v3 model"
     )
     parser.add_argument(
         "--batch_size",
@@ -98,9 +105,9 @@ def parse_arguments():
         "--imgnetweights",
         dest="imagenet_weights",
         type=str,
-        choices=("True", "False"),
+        # choices=("True", "False"),
         default="True",
-        help="determines to load imagenet pretrained weight or not",
+        help="determines to load imagenet pretrained weight or not: True, False, or the path to the weights",
         required=False,
     )
     parser.add_argument(
@@ -287,6 +294,32 @@ def parse_arguments():
         help="enter a short description to show what your aim for this run is",
         required=True,
     )
+    parser.add_argument(
+        "--backbone",
+        dest="backbone",
+        type=str,
+        help="enter the backbone's name for feeding the results into XGB model",
+        choices=("InceptionV3", "Vgg16", "ResnetV2", "Xception"),
+        default="InceptionV3",
+        required=True,
+    )
+    parser.add_argument(
+        "--multi_label",
+        dest="multi_label",
+        type=str,
+        help="enter the multi-label strategy: 'MultiOutputClassifier' or 'ClassifierChain'",
+        choices=("MultiOutputClassifier", "ClassifierChain"),
+        default="MultiOutputClassifier",
+        required=False,
+    )
+    parser.add_argument(
+        "--num_pop",
+        dest="num_pop",
+        type=int,
+        default=1,
+        help="number of layers which need to be popped for feeding into XGB model",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -299,8 +332,7 @@ def main():
 
     # Parameters
     num_classes = 8
-    tag = "resnet_with_XGboost"
-
+    tag = args.backbone + "_XGboost"
     mlflow.set_experiment(args.experiment)
     mlflow.start_run()
     mlflow.set_tag("mlflow.runName", tag)
@@ -311,7 +343,7 @@ def main():
             # RemovePadding(),
             # BenGraham(350),
             # Resize((224, 224), False),
-            KerasPreprocess(model_name="resnet"),
+            KerasPreprocess(model_name="inception"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
@@ -340,16 +372,35 @@ def main():
     train_DL = ODIR_Dataloader(dataset=train_dataset, batch_size=args.batch_size)
     val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
-    # Model
-    model = InceptionResNetV2(
-        num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
-    )
+    # Backbone
+    if args.backbone == "InceptionV3":
+        backbone = InceptionV3(
+            num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+        )
+
+    elif args.backbone == "Vgg16":
+        backbone = Vgg16(
+            num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+        )
+
+    elif args.backbone == "ResnetV2":
+        backbone = InceptionResNetV2(
+            num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+        )
+
+    elif args.backbone == "Xception":
+        backbone = Xception(
+            num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+        )
+
+    xgb = XGBoost(backbone=backbone, multi_label=args.multi_label, num_pop=args.num_pop)
 
     if strtobool(args.imagenet_weights):
-        model.load_imagenet_weights()
+        xgb.load_imagenet_weights()
         print("Imagenet weights loaded")
+
     if args.weights_path is not None:
-        model.load_weights(path=args.weights_path)
+        xgb.backbone.load_weights(path=args.weights_path)
         print("Weights loaded from the path given")
 
     add_args_to_mlflow(args)
@@ -400,6 +451,7 @@ def main():
         micro_specificity,
         micro_sensitivity,
         micro_f1_score,
+        loss,
     ]
 
     for l in range(num_classes):
@@ -412,13 +464,15 @@ def main():
         metrics.append(auc_per_class(label=l))
         metrics.append(final_per_class(label=l))
         metrics.append(specificity_per_class(label=l))
-        # metrics.append(sensitivity_per_class(label=l))
+        metrics.append(sensitivity_per_class(label=l))
 
     # Callbacks
     earlyStoppingCallback = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=args.patience, mode="min", verbose=1
+        monitor=args.early_stopping_monitor,
+        patience=args.patience,
+        mode=args.early_stopping_mode,
+        verbose=args.early_stopping_verbose,
     )
-
     model_file = os.path.join(args.result, f"model_weights_{tag}.h5")
     modelCheckpoint = tf.keras.callbacks.ModelCheckpoint(
         model_file,
@@ -438,12 +492,13 @@ def main():
             validation_result,
             training_result_per_class,
             validation_result_per_class,
-        ) = model.train(
+        ) = xgb.train(
             epochs=args.pre_epochs,
             loss=args.loss,
             metrics=metrics,
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
+            num_pop=args.num_pop,
             freeze_backbone=True,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
@@ -455,10 +510,10 @@ def main():
 
         # model trainable and non-trainable parameters
         trainableParams = np.sum(
-            [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+            [np.prod(v.get_shape()) for v in xgb.backbone.model.trainable_weights]
         )
         nonTrainableParams = np.sum(
-            [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
+            [np.prod(v.get_shape()) for v in xgb.backbone.model.non_trainable_weights]
         )
         totalParams = trainableParams + nonTrainableParams
 
@@ -474,12 +529,13 @@ def main():
             validation_result,
             training_result_per_class,
             validation_result_per_class,
-        ) = model.train(
+        ) = xgb.train(
             epochs=args.epochs,
             loss=args.loss,
             metrics=metrics,
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
+            num_pop=args.num_pop,
             freeze_backbone=False,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
@@ -491,10 +547,10 @@ def main():
 
         # model trainable and non-trainable parameters
         trainableParams = np.sum(
-            [np.prod(v.get_shape()) for v in model.model.trainable_weights]
+            [np.prod(v.get_shape()) for v in xgb.backbone.model.trainable_weights]
         )
         nonTrainableParams = np.sum(
-            [np.prod(v.get_shape()) for v in model.model.non_trainable_weights]
+            [np.prod(v.get_shape()) for v in xgb.backbone.model.non_trainable_weights]
         )
         totalParams = trainableParams + nonTrainableParams
 
@@ -505,8 +561,8 @@ def main():
     # Save
     print("Saving models weights...")
     CNN_file = os.path.join(args.result, f"model_weights_{tag}.h5")
-    xgboost_file = os.path.join(args.result, f"Xgboost_weights{tag}.pickle.dat")
-    model.save(path=CNN_file, xgboost_path=xgboost_file)
+    xgboost_file = os.path.join(args.result, f"Xgboost_{tag}.pickle.dat")
+    xgb.save(path=CNN_file, xgboost_path=xgboost_file)
 
     mlflow.log_artifact(CNN_file)
     mlflow.log_artifact(xgboost_file)
@@ -517,13 +573,13 @@ def main():
     mlflow.set_tags(tags)
 
     # Plot
-
     if args.epochs > 0:
         print("plotting...")
         accuracy_plot_figure = os.path.join(args.result, f"{tag}_accuracy.png")
         metrics_plot_figure = os.path.join(args.result, f"{tag}_metrics.png")
         p.plot_accuracy(history=history, path=accuracy_plot_figure)
         p.plot_metrics(history=history, path=metrics_plot_figure)
+
         mlflow.log_artifact(accuracy_plot_figure)
         mlflow.log_artifact(metrics_plot_figure)
 
@@ -551,9 +607,9 @@ def main():
 
     for key, val in validation_result_per_class.items():
         try:
-            mlflow.log_metric(key, val)
+            mlflow.log_metric("val_" + key, val)
         except:
-            mlflow.log_metric(key, val.numpy())
+            mlflow.log_metric("val_" + key, val.numpy())
 
     mlflow.end_run()
 
