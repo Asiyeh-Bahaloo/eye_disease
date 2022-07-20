@@ -281,6 +281,13 @@ def parse_arguments():
         help="enter a short description to show what your aim for this run is",
         required=True,
     )
+    parser.add_argument(
+        "--weight_decay_rate",
+        dest="weight_decay_rate",
+        type=float,
+        default=0.2,
+        help="l2 regularization rate",
+    )
     args = parser.parse_args()
     return args
 
@@ -339,7 +346,9 @@ def main():
 
     # Model
     model = InceptionResNetV2(
-        num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+        num_classes=num_classes,
+        input_shape=(args.shape, args.shape, 3),
+        weight_decay_rate=args.weight_decay_rate,
     )
     if strtobool(args.imagenet_weights):
         model.load_imagenet_weights()
