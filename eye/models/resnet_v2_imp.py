@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from keras.layers import VersionAwareLayers
 from keras import layers
 from keras import backend
+from keras import regularizers
 
 # from tensorflow.keras.models import Model
 from keras.engine import training
@@ -19,13 +20,16 @@ BASE_WEIGHT_URL = (
 
 
 class InceptionResNetV2(KerasClsBaseModel):
-    def __init__(self, num_classes, input_shape):
+    def __init__(self, num_classes, input_shape, weight_decay_rate=None):
         """Initialization of Resnet_v2 class which clarify model architecture"""
 
         # super().__init__(num_classes)
         self.num_classes = num_classes
         self.input_shape = input_shape
-        self.model = self.build(self.num_classes, self.input_shape)
+        self.weight_decay_rate = weight_decay_rate
+        self.model = self.build(
+            self.num_classes, self.input_shape, self.weight_decay_rate
+        )
 
     def conv2d_bn(
         self,
@@ -167,7 +171,12 @@ class InceptionResNetV2(KerasClsBaseModel):
             x = layers.Activation(activation, name=block_name + "_ac")(x)
         return x
 
-    def build(self, num_classes, input_shape):
+    def build(
+        self,
+        num_classes,
+        input_shape,
+        weight_decay_rate=None,
+    ):
         """builds the model architecture by default uses random weights
 
         Parameters
@@ -302,15 +311,19 @@ class InceptionResNetV2(KerasClsBaseModel):
         inputs = img_input
         # Create model.
         model = training.Model(inputs, x, name="inception_resnet_v2")
-        # model = Model(inputs=backbone.input, outputs=x)
+
+        if weight_decay_rate is not None:
+            l2_regularizer = regularizers.l2(weight_decay_rate)
+            for layer in model.layers:
+                if isinstance(layer, layers.Conv2D) or isinstance(layer, layers.Dense):
+                    model.add_loss(lambda: l2_regularizer(layer.kernel))
+                if hasattr(layer, "bias_regularizer") and layer.use_bias:
+                    model.add_loss(lambda: l2_regularizer(layer.bias))
 
         return model
 
     def load_imagenet_weights(self):
         """loads imagenet-pretrained weight into model"""
-
-        ### remember to pop layersssss !!!!!!!!!!!!!!!
-        ### I have to pop last 2 layers and load imagenet weights
 
         x = self.model.layers[-3].output
         self.model = training.Model(self.model.input, x)
