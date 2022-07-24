@@ -282,6 +282,13 @@ def parse_arguments():
         help="enter a short description to show what your aim for this run is",
         required=True,
     )
+    parser.add_argument(
+        "--dropout_rate",
+        dest="dropout_rate",
+        type=float,
+        default=None,
+        help="dropout_rate used in all dropout layers",
+    )
     args = parser.parse_args()
     return args
 
@@ -339,7 +346,11 @@ def main():
     val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
-    model = Vgg16(num_classes=num_classes, input_shape=(args.shape, args.shape, 3))
+    model = Vgg16(
+        num_classes=num_classes,
+        input_shape=(args.shape, args.shape, 3),
+        dropout_rate=args.dropout_rate,
+    )
 
     if strtobool(args.imagenet_weights):
         model.load_imagenet_weights()
@@ -437,6 +448,7 @@ def main():
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
+            last_freeze_num=4,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
             batch_size=args.batch_size,
