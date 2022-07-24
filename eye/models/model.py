@@ -144,7 +144,7 @@ class KerasClsBaseModel(BaseModel):
                 l.trainable = True
 
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-        # print(self.model.summary())
+        # print(self.model.summary(show_trainable=True))
 
         if train_data_loader == None:
             history = self.model.fit(
