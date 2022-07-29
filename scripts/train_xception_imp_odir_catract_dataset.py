@@ -12,10 +12,9 @@ from tensorflow.keras.optimizers.schedules import (
     InverseTimeDecay,
 )
 
-from eye.models.vgg16 import Vgg16
+from eye.models.xception_imp import Xception
 from eye.utils import plotter_utils as p
 from eye.utils.utils import MlflowCallback, add_args_to_mlflow
-
 from eye.data.dataloader import ODIR_Dataloader, Mix_Dataloader
 from eye.data.dataset import ODIR_Dataset, Cataract_Dataset
 from eye.data.transforms import (
@@ -54,7 +53,7 @@ from eye.evaluation.metrics import (
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Arguments for training the VGG16 model"
+        description="Arguments for training the Xception model"
     )
     parser.add_argument(
         "--batch_size",
@@ -291,18 +290,11 @@ def parse_arguments():
         help="enter a short description to show what your aim for this run is",
         required=True,
     )
-    parser.add_argument(
-        "--dropout_rate",
-        dest="dropout_rate",
-        type=float,
-        default=None,
-        help="dropout_rate used in all dropout layers",
-    )
     args = parser.parse_args()
     return args
 
 
-# python scripts/train_vgg16.py --batch=2 --epoch=1 --patience=5 --loss=binary_crossentropy --data=./Data --result=./Data
+# python scripts/train_xception.py --batch=2 --epoch=1 --patience=5 --loss=binary_crossentropy --data=./Data --result=./Data
 def main():
     args = parse_arguments()
     tf.config.run_functions_eagerly(True)
@@ -311,7 +303,7 @@ def main():
 
     # Parameters
     num_classes = 8
-    tag = "vgg16_MIX"
+    tag = "xception_imp_MIX"
 
     mlflow.set_experiment(args.experiment)
     mlflow.start_run()
@@ -323,7 +315,7 @@ def main():
             # RemovePadding(),
             # BenGraham(args.bengraham_scale),
             # Resize((args.shape, args.shape), strtobool(args.keepAspectRatio)),
-            KerasPreprocess(model_name="vgg16"),
+            KerasPreprocess(model_name="xception"),
             # RandomShift(0.2, 0.3),
             # RandomFlipLR(),
             # RandomFlipUD(),
@@ -369,12 +361,11 @@ def main():
     val_DL = ODIR_Dataloader(dataset=val_dataset, batch_size=args.batch_size)
 
     # Model
-    model = Vgg16(
+    model = Xception(
         num_classes=num_classes,
         input_shape=(args.shape, args.shape, 3),
-        dropout_rate=args.dropout_rate,
+        dropout_rate=0.25,
     )
-
     if strtobool(args.imagenet_weights):
         model.load_imagenet_weights()
         print("Imagenet weights loaded")
@@ -447,10 +438,7 @@ def main():
 
     # Callbacks
     earlyStoppingCallback = tf.keras.callbacks.EarlyStopping(
-        monitor=args.early_stopping_monitor,
-        patience=args.patience,
-        mode=args.early_stopping_mode,
-        verbose=args.early_stopping_verbose,
+        monitor="val_loss", patience=args.patience, mode="min", verbose=1
     )
 
     model_file = os.path.join(args.result, f"model_weights_{tag}.h5")
@@ -473,7 +461,7 @@ def main():
             callbacks=[mlfCallback, earlyStoppingCallback, modelCheckpoint],
             optimizer=sgd,
             freeze_backbone=True,
-            last_freeze_num=4,
+            last_freeze_num=88,
             train_data_loader=train_DL,
             validation_data_loader=val_DL,
             batch_size=args.batch_size,
