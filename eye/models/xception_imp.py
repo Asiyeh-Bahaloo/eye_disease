@@ -10,6 +10,7 @@ from keras.layers import VersionAwareLayers
 from keras.utils import data_utils
 from keras.utils import layer_utils
 from tensorflow.python.util.tf_export import keras_export
+from keras import regularizers
 
 from .model import KerasClsBaseModel
 
@@ -30,7 +31,9 @@ class Xception(KerasClsBaseModel):
         number of classes of the classification task
     """
 
-    def __init__(self, num_classes, input_shape, dropout_rate=None):
+    def __init__(
+        self, num_classes, input_shape, dropout_rate=None, weight_decay_rate=None
+    ):
         """__init__ set number of classes and builds model architecture
 
         Parameters
@@ -38,13 +41,15 @@ class Xception(KerasClsBaseModel):
         num_classes : int
             number of classes that model should detect
         """
-        # super().__init__(num_classes)
-        self.num_classes = num_classes
-        self.input_shape = input_shape
-        self.dropout_rate = dropout_rate
-        self.model = self.build(self.num_classes, self.input_shape, self.dropout_rate)
+        super().__init__(num_classes, input_shape, dropout_rate, weight_decay_rate)
 
-    def build(self, num_classes, input_shape, dropout_rate=None):
+    def build(
+        self,
+        num_classes,
+        input_shape,
+        dropout_rate=None,
+        weight_decay_rate=None,
+    ):
         """builds the model architecture by default uses random weights
 
         Parameters
@@ -220,20 +225,14 @@ class Xception(KerasClsBaseModel):
         inputs = img_input
         model = training.Model(inputs, x, name="xception")
 
-        # c = 0
-        # d = 0
-        # e = 0
-        # for i in model.layers:
-        #     if "Conv2D" in str(i):
-        #         c += 1
-        #     if "ropout" in str(i):
-        #         d += 1
-        #     if d > 0:
-        #         e += 1
+        if weight_decay_rate is not None:
+            l2_regularizer = regularizers.l2(weight_decay_rate)
+            for layer in model.layers:
+                if isinstance(layer, layers.Conv2D) or isinstance(layer, layers.Dense):
+                    model.add_loss(lambda: l2_regularizer(layer.kernel))
+                if hasattr(layer, "bias_regularizer") and layer.use_bias:
+                    model.add_loss(lambda: l2_regularizer(layer.bias))
 
-        # print(c, d, e)
-        # print(len(model.layers))
-        # print(model.summary())
         return model
 
     def load_imagenet_weights(self):

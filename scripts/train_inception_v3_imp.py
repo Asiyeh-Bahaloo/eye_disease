@@ -282,6 +282,20 @@ def parse_arguments():
         help="enter a short description to show what your aim for this run is",
         required=True,
     )
+    parser.add_argument(
+        "--weight_decay_rate",
+        dest="weight_decay_rate",
+        type=float,
+        default=0.2,
+        help="l2 regularization rate",
+    )
+    parser.add_argument(
+        "--dropout_rate",
+        dest="dropout_rate",
+        type=float,
+        default=0.25,
+        help="dropout rate of the models",
+    )
     args = parser.parse_args()
     return args
 
@@ -340,10 +354,13 @@ def main():
     # Model
     # channels-last data format
     model = InceptionV3(
-        num_classes=num_classes, input_shape=(args.shape, args.shape, 3)
+        num_classes=num_classes,
+        input_shape=(args.shape, args.shape, 3),
+        dropout_rate=args.dropout_rate,
+        weight_decay_rate=args.weight_decay_rate,
     )
     if strtobool(args.imagenet_weights):
-        model.load_imagenet_weights_manual()
+        model.load_imagenet_weights()
         print("Imagenet weights loaded")
     if args.weights_path is not None:
         model.load_weights(path=args.weights_path)

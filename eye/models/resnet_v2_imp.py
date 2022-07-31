@@ -20,23 +20,18 @@ BASE_WEIGHT_URL = (
 
 
 class InceptionResNetV2(KerasClsBaseModel):
-    def __init__(self, num_classes, input_shape, weight_decay_rate=None):
+    def __init__(
+        self, num_classes, input_shape, dropout_rate=None, weight_decay_rate=None
+    ):
         """Initialization of Resnet_v2 class which clarify model architecture"""
 
-        # super().__init__(num_classes)
-        self.num_classes = num_classes
-        self.input_shape = input_shape
-        self.weight_decay_rate = weight_decay_rate
-        self.model = self.build(
-            self.num_classes, self.input_shape, self.weight_decay_rate
-        )
+        super().__init__(num_classes, input_shape, dropout_rate, weight_decay_rate)
 
     def conv2d_bn(
         self,
         x,
         filters,
         kernel_size,
-        dropout,
         dropout_rate=0.25,
         strides=1,
         padding="same",
@@ -66,7 +61,7 @@ class InceptionResNetV2(KerasClsBaseModel):
             use_bias=use_bias,
             name=name,
         )(x)
-        if dropout:
+        if dropout_rate is not None:
             x = Dropout(dropout_rate)(x, training=True)
         if not use_bias:
             bn_axis = 1 if backend.image_data_format() == "channels_first" else 3
@@ -78,7 +73,7 @@ class InceptionResNetV2(KerasClsBaseModel):
         return x
 
     def inception_resnet_block(
-        self, x, scale, block_type, block_idx, activation="relu"
+        self, x, scale, block_type, block_idx, activation="relu", dropout_rate=None
     ):
         """Adds an Inception-ResNet block.
         This function builds 3 types of Inception-ResNet blocks mentioned
@@ -111,32 +106,24 @@ class InceptionResNetV2(KerasClsBaseModel):
             `'block17'` or `'block8'`.
         """
         if block_type == "block35":
-            branch_0 = self.conv2d_bn(x, 32, 1, dropout=False, dropout_rate=0.25)
-            branch_1 = self.conv2d_bn(x, 32, 1, dropout=False, dropout_rate=0.25)
-            branch_1 = self.conv2d_bn(branch_1, 32, 3, dropout=False, dropout_rate=0.25)
-            branch_2 = self.conv2d_bn(x, 32, 1, dropout=False, dropout_rate=0.25)
-            branch_2 = self.conv2d_bn(branch_2, 48, 3, dropout=False, dropout_rate=0.25)
-            branch_2 = self.conv2d_bn(branch_2, 64, 3, dropout=False, dropout_rate=0.25)
+            branch_0 = self.conv2d_bn(x, 32, 1, dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(x, 32, 1, dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(branch_1, 32, 3, dropout_rate=dropout_rate)
+            branch_2 = self.conv2d_bn(x, 32, 1, dropout_rate=dropout_rate)
+            branch_2 = self.conv2d_bn(branch_2, 48, 3, dropout_rate=dropout_rate)
+            branch_2 = self.conv2d_bn(branch_2, 64, 3, dropout_rate=dropout_rate)
             branches = [branch_0, branch_1, branch_2]
         elif block_type == "block17":
-            branch_0 = self.conv2d_bn(x, 192, 1, dropout=False, dropout_rate=0.25)
-            branch_1 = self.conv2d_bn(x, 128, 1, dropout=False, dropout_rate=0.25)
-            branch_1 = self.conv2d_bn(
-                branch_1, 160, [1, 7], dropout=False, dropout_rate=0.25
-            )
-            branch_1 = self.conv2d_bn(
-                branch_1, 192, [7, 1], dropout=False, dropout_rate=0.25
-            )
+            branch_0 = self.conv2d_bn(x, 192, 1, dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(x, 128, 1, dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(branch_1, 160, [1, 7], dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(branch_1, 192, [7, 1], dropout_rate=dropout_rate)
             branches = [branch_0, branch_1]
         elif block_type == "block8":
-            branch_0 = self.conv2d_bn(x, 192, 1, dropout=True, dropout_rate=0.25)
-            branch_1 = self.conv2d_bn(x, 192, 1, dropout=True, dropout_rate=0.25)
-            branch_1 = self.conv2d_bn(
-                branch_1, 224, [1, 3], dropout=True, dropout_rate=0.25
-            )
-            branch_1 = self.conv2d_bn(
-                branch_1, 256, [3, 1], dropout=True, dropout_rate=0.25
-            )
+            branch_0 = self.conv2d_bn(x, 192, 1, dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(x, 192, 1, dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(branch_1, 224, [1, 3], dropout_rate=dropout_rate)
+            branch_1 = self.conv2d_bn(branch_1, 256, [3, 1], dropout_rate=dropout_rate)
             branches = [branch_0, branch_1]
         else:
             raise ValueError(
@@ -154,8 +141,7 @@ class InceptionResNetV2(KerasClsBaseModel):
             mixed,
             backend.int_shape(x)[channel_axis],
             1,
-            dropout=False,
-            dropout_rate=0.25,
+            dropout_rate=dropout_rate,
             activation=None,
             use_bias=True,
             name=block_name + "_conv",
@@ -175,6 +161,7 @@ class InceptionResNetV2(KerasClsBaseModel):
         self,
         num_classes,
         input_shape,
+        dropout_rate=None,
         weight_decay_rate=None,
     ):
         """builds the model architecture by default uses random weights
@@ -197,29 +184,26 @@ class InceptionResNetV2(KerasClsBaseModel):
             img_input,
             32,
             3,
-            dropout=False,
-            dropout_rate=0.25,
+            dropout_rate=dropout_rate,
             strides=2,
             padding="valid",
         )
-        x = self.conv2d_bn(x, 32, 3, dropout=False, dropout_rate=0.25, padding="valid")
-        x = self.conv2d_bn(x, 64, 3, dropout=False, dropout_rate=0.25)
+        x = self.conv2d_bn(x, 32, 3, dropout_rate=dropout_rate, padding="valid")
+        x = self.conv2d_bn(x, 64, 3, dropout_rate=dropout_rate)
         x = layers.MaxPooling2D(3, strides=2)(x)
-        x = self.conv2d_bn(x, 80, 1, dropout=False, dropout_rate=0.25, padding="valid")
-        x = self.conv2d_bn(x, 192, 3, dropout=False, dropout_rate=0.25, padding="valid")
+        x = self.conv2d_bn(x, 80, 1, dropout_rate=dropout_rate, padding="valid")
+        x = self.conv2d_bn(x, 192, 3, dropout_rate=dropout_rate, padding="valid")
         x = layers.MaxPooling2D(3, strides=2)(x)
 
         # Mixed 5b (Inception-A block): 35 x 35 x 320
-        branch_0 = self.conv2d_bn(x, 96, 1, dropout=False, dropout_rate=0.25)
-        branch_1 = self.conv2d_bn(x, 48, 1, dropout=False, dropout_rate=0.25)
-        branch_1 = self.conv2d_bn(branch_1, 64, 5, dropout=False, dropout_rate=0.25)
-        branch_2 = self.conv2d_bn(x, 64, 1, dropout=False, dropout_rate=0.25)
-        branch_2 = self.conv2d_bn(branch_2, 96, 3, dropout=False, dropout_rate=0.25)
-        branch_2 = self.conv2d_bn(branch_2, 96, 3, dropout=False, dropout_rate=0.25)
+        branch_0 = self.conv2d_bn(x, 96, 1, dropout_rate=dropout_rate)
+        branch_1 = self.conv2d_bn(x, 48, 1, dropout_rate=dropout_rate)
+        branch_1 = self.conv2d_bn(branch_1, 64, 5, dropout_rate=dropout_rate)
+        branch_2 = self.conv2d_bn(x, 64, 1, dropout_rate=dropout_rate)
+        branch_2 = self.conv2d_bn(branch_2, 96, 3, dropout_rate=dropout_rate)
+        branch_2 = self.conv2d_bn(branch_2, 96, 3, dropout_rate=dropout_rate)
         branch_pool = layers.AveragePooling2D(3, strides=1, padding="same")(x)
-        branch_pool = self.conv2d_bn(
-            branch_pool, 64, 1, dropout=False, dropout_rate=0.25
-        )
+        branch_pool = self.conv2d_bn(branch_pool, 64, 1, dropout_rate=dropout_rate)
         branches = [branch_0, branch_1, branch_2, branch_pool]
         channel_axis = 1 if backend.image_data_format() == "channels_first" else 3
         x = layers.Concatenate(axis=channel_axis, name="mixed_5b")(branches)
@@ -227,21 +211,24 @@ class InceptionResNetV2(KerasClsBaseModel):
         # 10x block35 (Inception-ResNet-A block): 35 x 35 x 320
         for block_idx in range(1, 11):
             x = self.inception_resnet_block(
-                x, scale=0.17, block_type="block35", block_idx=block_idx
+                x,
+                scale=0.17,
+                block_type="block35",
+                block_idx=block_idx,
+                dropout_rate=dropout_rate,
             )
 
         # Mixed 6a (Reduction-A block): 17 x 17 x 1088
         branch_0 = self.conv2d_bn(
-            x, 384, 3, dropout=False, dropout_rate=0.25, strides=2, padding="valid"
+            x, 384, 3, dropout_rate=dropout_rate, strides=2, padding="valid"
         )
-        branch_1 = self.conv2d_bn(x, 256, 1, dropout=False, dropout_rate=0.25)
-        branch_1 = self.conv2d_bn(branch_1, 256, 3, dropout=False, dropout_rate=0.25)
+        branch_1 = self.conv2d_bn(x, 256, 1, dropout_rate=dropout_rate)
+        branch_1 = self.conv2d_bn(branch_1, 256, 3, dropout_rate=dropout_rate)
         branch_1 = self.conv2d_bn(
             branch_1,
             384,
             3,
-            dropout=False,
-            dropout_rate=0.25,
+            dropout_rate=dropout_rate,
             strides=2,
             padding="valid",
         )
@@ -252,38 +239,39 @@ class InceptionResNetV2(KerasClsBaseModel):
         # 20x block17 (Inception-ResNet-B block): 17 x 17 x 1088
         for block_idx in range(1, 21):
             x = self.inception_resnet_block(
-                x, scale=0.1, block_type="block17", block_idx=block_idx
+                x,
+                scale=0.1,
+                block_type="block17",
+                block_idx=block_idx,
+                dropout_rate=dropout_rate,
             )
 
         # Mixed 7a (Reduction-B block): 8 x 8 x 2080
-        branch_0 = self.conv2d_bn(x, 256, 1, dropout=True, dropout_rate=0.25)
+        branch_0 = self.conv2d_bn(x, 256, 1, dropout_rate=dropout_rate)
         branch_0 = self.conv2d_bn(
             branch_0,
             384,
             3,
-            dropout=True,
-            dropout_rate=0.25,
+            dropout_rate=dropout_rate,
             strides=2,
             padding="valid",
         )
-        branch_1 = self.conv2d_bn(x, 256, 1, dropout=True, dropout_rate=0.25)
+        branch_1 = self.conv2d_bn(x, 256, 1, dropout_rate=dropout_rate)
         branch_1 = self.conv2d_bn(
             branch_1,
             288,
             3,
-            dropout=True,
-            dropout_rate=0.25,
+            dropout_rate=dropout_rate,
             strides=2,
             padding="valid",
         )
-        branch_2 = self.conv2d_bn(x, 256, 1, dropout=True, dropout_rate=0.25)
-        branch_2 = self.conv2d_bn(branch_2, 288, 3, dropout=True, dropout_rate=0.25)
+        branch_2 = self.conv2d_bn(x, 256, 1, dropout_rate=dropout_rate)
+        branch_2 = self.conv2d_bn(branch_2, 288, 3, dropout_rate=dropout_rate)
         branch_2 = self.conv2d_bn(
             branch_2,
             320,
             3,
-            dropout=True,
-            dropout_rate=0.25,
+            dropout_rate=dropout_rate,
             strides=2,
             padding="valid",
         )
@@ -294,14 +282,23 @@ class InceptionResNetV2(KerasClsBaseModel):
         # 10x block8 (Inception-ResNet-C block): 8 x 8 x 2080
         for block_idx in range(1, 10):
             x = self.inception_resnet_block(
-                x, scale=0.2, block_type="block8", block_idx=block_idx
+                x,
+                scale=0.2,
+                block_type="block8",
+                block_idx=block_idx,
+                dropout_rate=dropout_rate,
             )
         x = self.inception_resnet_block(
-            x, scale=1.0, activation=None, block_type="block8", block_idx=10
+            x,
+            scale=1.0,
+            activation=None,
+            block_type="block8",
+            block_idx=10,
+            dropout_rate=dropout_rate,
         )
 
         # Final convolution block: 8 x 8 x 1536
-        x = self.conv2d_bn(x, 1536, 1, dropout=True, dropout_rate=0.25, name="conv_7b")
+        x = self.conv2d_bn(x, 1536, 1, dropout_rate=dropout_rate, name="conv_7b")
 
         ## top part
         x = GlobalAveragePooling2D()(x)

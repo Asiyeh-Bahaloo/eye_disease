@@ -7,6 +7,7 @@ import numpy as np
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from keras import layers
 from keras.utils import data_utils
+from keras import regularizers
 
 from .model import KerasClsBaseModel
 
@@ -61,7 +62,9 @@ def load_subset_weights_from_hdf5_group(f):
 
 
 class InceptionV3(KerasClsBaseModel):
-    def __init__(self, num_classes, input_shape):
+    def __init__(
+        self, num_classes, input_shape, dropout_rate=None, weight_decay_rate=None
+    ):
         """__init__  is  constructor function of inception class
 
         this class creat a customized Inception_v3 model for classifying task
@@ -72,10 +75,7 @@ class InceptionV3(KerasClsBaseModel):
         num_classes : int
             number of classes of task
         """
-        # super().__init__(num_classes)
-        self.num_classes = num_classes
-        self.input_shape = input_shape
-        self.model = self.build(self.num_classes, self.input_shape)
+        super().__init__(num_classes, input_shape, dropout_rate, weight_decay_rate)
 
     def conv2d_bn(
         self,
@@ -127,7 +127,13 @@ class InceptionV3(KerasClsBaseModel):
         x = layers.Activation("relu", name=name)(x)
         return x
 
-    def build(self, num_classes, input_shape):
+    def build(
+        self,
+        num_classes,
+        input_shape,
+        dropout_rate=None,
+        weight_decay_rate=None,
+    ):
 
         """builds the model architecture by default uses random weights
 
@@ -148,62 +154,68 @@ class InceptionV3(KerasClsBaseModel):
         channel_axis = 3  ## channels_last data format
 
         x = self.conv2d_bn(
-            img_input, 32, 3, 3, strides=(2, 2), padding="valid", dropout_rate=0.25
+            img_input,
+            32,
+            3,
+            3,
+            strides=(2, 2),
+            padding="valid",
+            dropout_rate=dropout_rate,
         )
-        x = self.conv2d_bn(x, 32, 3, 3, padding="valid", dropout_rate=0.25)
-        x = self.conv2d_bn(x, 64, 3, 3, dropout_rate=0.25)
+        x = self.conv2d_bn(x, 32, 3, 3, padding="valid", dropout_rate=dropout_rate)
+        x = self.conv2d_bn(x, 64, 3, 3, dropout_rate=dropout_rate)
         x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
-        x = self.conv2d_bn(x, 80, 1, 1, padding="valid", dropout_rate=0.25)
-        x = self.conv2d_bn(x, 192, 3, 3, padding="valid", dropout_rate=0.25)
+        x = self.conv2d_bn(x, 80, 1, 1, padding="valid", dropout_rate=dropout_rate)
+        x = self.conv2d_bn(x, 192, 3, 3, padding="valid", dropout_rate=dropout_rate)
         x = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
 
         # mixed 0: 35 x 35 x 256
-        branch1x1 = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
+        branch1x1 = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
 
-        branch5x5 = self.conv2d_bn(x, 48, 1, 1, dropout_rate=0.25)
-        branch5x5 = self.conv2d_bn(branch5x5, 64, 5, 5, dropout_rate=0.25)
+        branch5x5 = self.conv2d_bn(x, 48, 1, 1, dropout_rate=dropout_rate)
+        branch5x5 = self.conv2d_bn(branch5x5, 64, 5, 5, dropout_rate=dropout_rate)
 
-        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
+        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
 
         branch_pool = layers.AveragePooling2D((3, 3), strides=(1, 1), padding="same")(x)
-        branch_pool = self.conv2d_bn(branch_pool, 32, 1, 1, dropout_rate=0.25)
+        branch_pool = self.conv2d_bn(branch_pool, 32, 1, 1, dropout_rate=dropout_rate)
         x = layers.Concatenate(
             axis=channel_axis,
             name="mixed0",
         )([branch1x1, branch5x5, branch3x3dbl, branch_pool])
 
         # mixed 1: 35 x 35 x 288
-        branch1x1 = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
+        branch1x1 = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
 
-        branch5x5 = self.conv2d_bn(x, 48, 1, 1, dropout_rate=0.25)
-        branch5x5 = self.conv2d_bn(branch5x5, 64, 5, 5, dropout_rate=0.25)
+        branch5x5 = self.conv2d_bn(x, 48, 1, 1, dropout_rate=dropout_rate)
+        branch5x5 = self.conv2d_bn(branch5x5, 64, 5, 5, dropout_rate=dropout_rate)
 
-        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
+        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
 
         branch_pool = layers.AveragePooling2D((3, 3), strides=(1, 1), padding="same")(x)
-        branch_pool = self.conv2d_bn(branch_pool, 64, 1, 1, dropout_rate=0.25)
+        branch_pool = self.conv2d_bn(branch_pool, 64, 1, 1, dropout_rate=dropout_rate)
         x = layers.Concatenate(
             axis=channel_axis,
             name="mixed1",
         )([branch1x1, branch5x5, branch3x3dbl, branch_pool])
 
         # mixed 2: 35 x 35 x 288
-        branch1x1 = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
+        branch1x1 = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
 
-        branch5x5 = self.conv2d_bn(x, 48, 1, 1, dropout_rate=0.25)
-        branch5x5 = self.conv2d_bn(branch5x5, 64, 5, 5, dropout_rate=0.25)
+        branch5x5 = self.conv2d_bn(x, 48, 1, 1, dropout_rate=dropout_rate)
+        branch5x5 = self.conv2d_bn(branch5x5, 64, 5, 5, dropout_rate=dropout_rate)
 
-        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
+        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
 
         branch_pool = layers.AveragePooling2D((3, 3), strides=(1, 1), padding="same")(x)
-        branch_pool = self.conv2d_bn(branch_pool, 64, 1, 1, dropout_rate=0.25)
+        branch_pool = self.conv2d_bn(branch_pool, 64, 1, 1, dropout_rate=dropout_rate)
         x = layers.Concatenate(
             axis=channel_axis,
             name="mixed2",
@@ -211,13 +223,19 @@ class InceptionV3(KerasClsBaseModel):
 
         # mixed 3: 17 x 17 x 768
         branch3x3 = self.conv2d_bn(
-            x, 384, 3, 3, strides=(2, 2), padding="valid", dropout_rate=0.25
+            x, 384, 3, 3, strides=(2, 2), padding="valid", dropout_rate=dropout_rate
         )
 
-        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=0.25)
-        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=0.25)
+        branch3x3dbl = self.conv2d_bn(x, 64, 1, 1, dropout_rate=dropout_rate)
+        branch3x3dbl = self.conv2d_bn(branch3x3dbl, 96, 3, 3, dropout_rate=dropout_rate)
         branch3x3dbl = self.conv2d_bn(
-            branch3x3dbl, 96, 3, 3, strides=(2, 2), padding="valid", dropout_rate=0.25
+            branch3x3dbl,
+            96,
+            3,
+            3,
+            strides=(2, 2),
+            padding="valid",
+            dropout_rate=dropout_rate,
         )
 
         branch_pool = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
@@ -226,20 +244,28 @@ class InceptionV3(KerasClsBaseModel):
         )
 
         # mixed 4: 17 x 17 x 768
-        branch1x1 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
+        branch1x1 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
 
-        branch7x7 = self.conv2d_bn(x, 128, 1, 1, dropout_rate=0.25)
-        branch7x7 = self.conv2d_bn(branch7x7, 128, 1, 7, dropout_rate=0.25)
-        branch7x7 = self.conv2d_bn(branch7x7, 192, 7, 1, dropout_rate=0.25)
+        branch7x7 = self.conv2d_bn(x, 128, 1, 1, dropout_rate=dropout_rate)
+        branch7x7 = self.conv2d_bn(branch7x7, 128, 1, 7, dropout_rate=dropout_rate)
+        branch7x7 = self.conv2d_bn(branch7x7, 192, 7, 1, dropout_rate=dropout_rate)
 
-        branch7x7dbl = self.conv2d_bn(x, 128, 1, 1, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 128, 7, 1, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 128, 1, 7, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 128, 7, 1, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 192, 1, 7, dropout_rate=0.25)
+        branch7x7dbl = self.conv2d_bn(x, 128, 1, 1, dropout_rate=dropout_rate)
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 128, 7, 1, dropout_rate=dropout_rate
+        )
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 128, 1, 7, dropout_rate=dropout_rate
+        )
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 128, 7, 1, dropout_rate=dropout_rate
+        )
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 192, 1, 7, dropout_rate=dropout_rate
+        )
 
         branch_pool = layers.AveragePooling2D((3, 3), strides=(1, 1), padding="same")(x)
-        branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=0.25)
+        branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=dropout_rate)
         x = layers.Concatenate(
             axis=channel_axis,
             name="mixed4",
@@ -247,58 +273,88 @@ class InceptionV3(KerasClsBaseModel):
 
         # mixed 5, 6: 17 x 17 x 768
         for i in range(2):
-            branch1x1 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
+            branch1x1 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
 
-            branch7x7 = self.conv2d_bn(x, 160, 1, 1, dropout_rate=0.25)
-            branch7x7 = self.conv2d_bn(branch7x7, 160, 1, 7, dropout_rate=0.25)
-            branch7x7 = self.conv2d_bn(branch7x7, 192, 7, 1, dropout_rate=0.25)
+            branch7x7 = self.conv2d_bn(x, 160, 1, 1, dropout_rate=dropout_rate)
+            branch7x7 = self.conv2d_bn(branch7x7, 160, 1, 7, dropout_rate=dropout_rate)
+            branch7x7 = self.conv2d_bn(branch7x7, 192, 7, 1, dropout_rate=dropout_rate)
 
-            branch7x7dbl = self.conv2d_bn(x, 160, 1, 1, dropout_rate=0.25)
-            branch7x7dbl = self.conv2d_bn(branch7x7dbl, 160, 7, 1, dropout_rate=0.25)
-            branch7x7dbl = self.conv2d_bn(branch7x7dbl, 160, 1, 7, dropout_rate=0.25)
-            branch7x7dbl = self.conv2d_bn(branch7x7dbl, 160, 7, 1, dropout_rate=0.25)
-            branch7x7dbl = self.conv2d_bn(branch7x7dbl, 192, 1, 7, dropout_rate=0.25)
+            branch7x7dbl = self.conv2d_bn(x, 160, 1, 1, dropout_rate=dropout_rate)
+            branch7x7dbl = self.conv2d_bn(
+                branch7x7dbl, 160, 7, 1, dropout_rate=dropout_rate
+            )
+            branch7x7dbl = self.conv2d_bn(
+                branch7x7dbl, 160, 1, 7, dropout_rate=dropout_rate
+            )
+            branch7x7dbl = self.conv2d_bn(
+                branch7x7dbl, 160, 7, 1, dropout_rate=dropout_rate
+            )
+            branch7x7dbl = self.conv2d_bn(
+                branch7x7dbl, 192, 1, 7, dropout_rate=dropout_rate
+            )
 
             branch_pool = layers.AveragePooling2D(
                 (3, 3), strides=(1, 1), padding="same"
             )(x)
-            branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=0.25)
+            branch_pool = self.conv2d_bn(
+                branch_pool, 192, 1, 1, dropout_rate=dropout_rate
+            )
             x = layers.Concatenate(
                 axis=channel_axis,
                 name="mixed" + str(5 + i),
             )([branch1x1, branch7x7, branch7x7dbl, branch_pool])
 
         # mixed 7: 17 x 17 x 768
-        branch1x1 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
+        branch1x1 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
 
-        branch7x7 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
-        branch7x7 = self.conv2d_bn(branch7x7, 192, 1, 7, dropout_rate=0.25)
-        branch7x7 = self.conv2d_bn(branch7x7, 192, 7, 1, dropout_rate=0.25)
+        branch7x7 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
+        branch7x7 = self.conv2d_bn(branch7x7, 192, 1, 7, dropout_rate=dropout_rate)
+        branch7x7 = self.conv2d_bn(branch7x7, 192, 7, 1, dropout_rate=dropout_rate)
 
-        branch7x7dbl = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 192, 7, 1, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 192, 1, 7, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 192, 7, 1, dropout_rate=0.25)
-        branch7x7dbl = self.conv2d_bn(branch7x7dbl, 192, 1, 7, dropout_rate=0.25)
+        branch7x7dbl = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 192, 7, 1, dropout_rate=dropout_rate
+        )
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 192, 1, 7, dropout_rate=dropout_rate
+        )
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 192, 7, 1, dropout_rate=dropout_rate
+        )
+        branch7x7dbl = self.conv2d_bn(
+            branch7x7dbl, 192, 1, 7, dropout_rate=dropout_rate
+        )
 
         branch_pool = layers.AveragePooling2D((3, 3), strides=(1, 1), padding="same")(x)
-        branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=0.25)
+        branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=dropout_rate)
         x = layers.Concatenate(
             axis=channel_axis,
             name="mixed7",
         )([branch1x1, branch7x7, branch7x7dbl, branch_pool])
 
         # mixed 8: 8 x 8 x 1280
-        branch3x3 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
+        branch3x3 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
         branch3x3 = self.conv2d_bn(
-            branch3x3, 320, 3, 3, strides=(2, 2), padding="valid", dropout_rate=0.25
+            branch3x3,
+            320,
+            3,
+            3,
+            strides=(2, 2),
+            padding="valid",
+            dropout_rate=dropout_rate,
         )
 
-        branch7x7x3 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=0.25)
-        branch7x7x3 = self.conv2d_bn(branch7x7x3, 192, 1, 7, dropout_rate=0.25)
-        branch7x7x3 = self.conv2d_bn(branch7x7x3, 192, 7, 1, dropout_rate=0.25)
+        branch7x7x3 = self.conv2d_bn(x, 192, 1, 1, dropout_rate=dropout_rate)
+        branch7x7x3 = self.conv2d_bn(branch7x7x3, 192, 1, 7, dropout_rate=dropout_rate)
+        branch7x7x3 = self.conv2d_bn(branch7x7x3, 192, 7, 1, dropout_rate=dropout_rate)
         branch7x7x3 = self.conv2d_bn(
-            branch7x7x3, 192, 3, 3, strides=(2, 2), padding="valid", dropout_rate=0.25
+            branch7x7x3,
+            192,
+            3,
+            3,
+            strides=(2, 2),
+            padding="valid",
+            dropout_rate=dropout_rate,
         )
 
         branch_pool = layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
@@ -308,19 +364,29 @@ class InceptionV3(KerasClsBaseModel):
 
         # mixed 9: 8 x 8 x 2048
         for i in range(2):
-            branch1x1 = self.conv2d_bn(x, 320, 1, 1, dropout_rate=0.25)
+            branch1x1 = self.conv2d_bn(x, 320, 1, 1, dropout_rate=dropout_rate)
 
-            branch3x3 = self.conv2d_bn(x, 384, 1, 1, dropout_rate=0.25)
-            branch3x3_1 = self.conv2d_bn(branch3x3, 384, 1, 3, dropout_rate=0.25)
-            branch3x3_2 = self.conv2d_bn(branch3x3, 384, 3, 1, dropout_rate=0.25)
+            branch3x3 = self.conv2d_bn(x, 384, 1, 1, dropout_rate=dropout_rate)
+            branch3x3_1 = self.conv2d_bn(
+                branch3x3, 384, 1, 3, dropout_rate=dropout_rate
+            )
+            branch3x3_2 = self.conv2d_bn(
+                branch3x3, 384, 3, 1, dropout_rate=dropout_rate
+            )
             branch3x3 = layers.Concatenate(axis=channel_axis, name="mixed9_" + str(i))(
                 [branch3x3_1, branch3x3_2]
             )
 
-            branch3x3dbl = self.conv2d_bn(x, 448, 1, 1, dropout_rate=0.25)
-            branch3x3dbl = self.conv2d_bn(branch3x3dbl, 384, 3, 3, dropout_rate=0.25)
-            branch3x3dbl_1 = self.conv2d_bn(branch3x3dbl, 384, 1, 3, dropout_rate=0.25)
-            branch3x3dbl_2 = self.conv2d_bn(branch3x3dbl, 384, 3, 1, dropout_rate=0.25)
+            branch3x3dbl = self.conv2d_bn(x, 448, 1, 1, dropout_rate=dropout_rate)
+            branch3x3dbl = self.conv2d_bn(
+                branch3x3dbl, 384, 3, 3, dropout_rate=dropout_rate
+            )
+            branch3x3dbl_1 = self.conv2d_bn(
+                branch3x3dbl, 384, 1, 3, dropout_rate=dropout_rate
+            )
+            branch3x3dbl_2 = self.conv2d_bn(
+                branch3x3dbl, 384, 3, 1, dropout_rate=dropout_rate
+            )
             branch3x3dbl = layers.Concatenate(axis=channel_axis)(
                 [branch3x3dbl_1, branch3x3dbl_2]
             )
@@ -328,7 +394,9 @@ class InceptionV3(KerasClsBaseModel):
             branch_pool = layers.AveragePooling2D(
                 (3, 3), strides=(1, 1), padding="same"
             )(x)
-            branch_pool = self.conv2d_bn(branch_pool, 192, 1, 1, dropout_rate=0.25)
+            branch_pool = self.conv2d_bn(
+                branch_pool, 192, 1, 1, dropout_rate=dropout_rate
+            )
             x = layers.Concatenate(
                 axis=channel_axis,
                 name="mixed" + str(9 + i),
@@ -340,6 +408,15 @@ class InceptionV3(KerasClsBaseModel):
         x = Dense(num_classes, activation="sigmoid")(x)
 
         model = training.Model(inputs, x, name="inception_v3")
+
+        if weight_decay_rate is not None:
+            l2_regularizer = regularizers.l2(weight_decay_rate)
+            for layer in model.layers:
+                if isinstance(layer, layers.Conv2D) or isinstance(layer, layers.Dense):
+                    model.add_loss(lambda: l2_regularizer(layer.kernel))
+                if hasattr(layer, "bias_regularizer") and layer.use_bias:
+                    model.add_loss(lambda: l2_regularizer(layer.bias))
+
         return model
 
     def load_imagenet_weights(self):

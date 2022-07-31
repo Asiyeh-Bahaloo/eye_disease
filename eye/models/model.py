@@ -64,9 +64,19 @@ class KerasClsBaseModel(BaseModel):
         number of classes of the classification task.
     """
 
-    def __init__(self, num_class):
-        self.num_class = num_class
-        self.model = self.build(self.num_class)
+    def __init__(
+        self, num_classes, input_shape, dropout_rate=None, weight_decay_rate=None
+    ):
+        self.num_classes = num_classes
+        self.input_shape = input_shape
+        self.dropout_rate = dropout_rate
+        self.weight_decay_rate = weight_decay_rate
+        self.model = self.build(
+            self.num_classes,
+            self.input_shape,
+            self.dropout_rate,
+            self.weight_decay_rate,
+        )
 
     def build(self, num_class, pretrained_backbone=None):
         """[summary]

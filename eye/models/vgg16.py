@@ -1,6 +1,7 @@
 from tensorflow.keras import models, layers
 from .model import KerasClsBaseModel
 from keras.utils import data_utils
+from keras import regularizers
 
 
 WEIGHTS_PATH = (
@@ -18,7 +19,9 @@ class Vgg16(KerasClsBaseModel):
         number of classes of the classification task
     """
 
-    def __init__(self, num_classes, input_shape, dropout_rate=None):
+    def __init__(
+        self, num_classes, input_shape, dropout_rate=None, weight_decay_rate=None
+    ):
         """__init__ set number of classes and builds model architecture
 
         Parameters
@@ -26,16 +29,15 @@ class Vgg16(KerasClsBaseModel):
         num_classes : int
             number of classes that model should detect
         """
-        self.num_classes = num_classes
-        self.input_shape = input_shape
-        self.dropout_rate = dropout_rate
-        self.model = self.build(
-            self.input_shape,
-            self.num_classes,
-            self.dropout_rate,
-        )
+        super().__init__(num_classes, input_shape, dropout_rate, weight_decay_rate)
 
-    def build(self, input_shape, num_classes, dropout_rate):
+    def build(
+        self,
+        num_classes,
+        input_shape,
+        dropout_rate=None,
+        weight_decay_rate=None,
+    ):
         """builds the model architecture by default uses random weights
 
         Parameters
@@ -207,6 +209,14 @@ class Vgg16(KerasClsBaseModel):
         model.add(layer)
         layer = layers.Dense(num_classes, activation="sigmoid")
         model.add(layer)
+
+        if weight_decay_rate is not None:
+            l2_regularizer = regularizers.l2(weight_decay_rate)
+            for layer in model.layers:
+                if isinstance(layer, layers.Conv2D) or isinstance(layer, layers.Dense):
+                    model.add_loss(lambda: l2_regularizer(layer.kernel))
+                if hasattr(layer, "bias_regularizer") and layer.use_bias:
+                    model.add_loss(lambda: l2_regularizer(layer.bias))
 
         return model
 
