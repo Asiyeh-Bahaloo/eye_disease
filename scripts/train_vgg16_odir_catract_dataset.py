@@ -292,6 +292,13 @@ def parse_arguments():
         required=True,
     )
     parser.add_argument(
+        "--weight_decay_rate",
+        dest="weight_decay_rate",
+        type=float,
+        default=0.2,
+        help="l2 regularization rate",
+    )
+    parser.add_argument(
         "--dropout_rate",
         dest="dropout_rate",
         type=float,
@@ -373,6 +380,7 @@ def main():
         num_classes=num_classes,
         input_shape=(args.shape, args.shape, 3),
         dropout_rate=args.dropout_rate,
+        weight_decay_rate=args.weight_decay_rate,
     )
 
     if strtobool(args.imagenet_weights):
