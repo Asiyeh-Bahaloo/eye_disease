@@ -1,13 +1,13 @@
 import tensorflow as tf
-from keras import backend
-from keras.engine import training
+from tensorflow.keras import backend
+from tensorflow.python.keras.engine import training
 import h5py
 import numpy as np
 
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-from keras import layers
-from keras.utils import data_utils
-from keras import regularizers
+from tensorflow.keras import layers, regularizers
+from tensorflow.keras.utils import data_utils
+
 
 from .model import KerasClsBaseModel
 

@@ -1,8 +1,8 @@
 import tensorflow as tf
 from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
-from keras.applications.vgg16 import preprocess_input
-from keras.preprocessing import image
+from tensorflow.keras.applications.vgg16 import preprocess_input
+from tensorflow.keras.preprocessing import image
 
 
 class Knn:

@@ -1,16 +1,12 @@
 import tensorflow as tf
 
-# from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
-# from tensorflow.keras.models import Model
-import tensorflow.compat.v2 as tf
-from keras import backend
-from keras.applications import imagenet_utils
-from keras.engine import training
-from keras.layers import VersionAwareLayers
-from keras.utils import data_utils
-from keras.utils import layer_utils
+from tensorflow.keras import backend
+from tensorflow.keras.applications import imagenet_utils
+from tensorflow.python.keras.engine import training
+from tensorflow.keras.layers import VersionAwareLayers
+from tensorflow.keras.utils import data_utils, layer_utils
 from tensorflow.python.util.tf_export import keras_export
-from keras import regularizers
+from tensorflow.keras import regularizers
 
 from .model import KerasClsBaseModel
 
