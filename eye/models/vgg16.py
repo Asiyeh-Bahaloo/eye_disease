@@ -1,7 +1,7 @@
 from tensorflow.keras import models, layers
 from .model import KerasClsBaseModel
-from keras.utils import data_utils
-from keras import regularizers
+from tensorflow.keras.utils import data_utils
+from tensorflow.keras import regularizers
 
 
 WEIGHTS_PATH = (
