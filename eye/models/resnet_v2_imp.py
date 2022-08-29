@@ -2,14 +2,14 @@ import os, sys
 import tensorflow as tf
 from tensorflow.keras.applications import inception_resnet_v2
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
-from tensorflow.keras.layers import VersionAwareLayers
+from tensorflow.python.keras.layers import VersionAwareLayers
 from tensorflow.keras import layers
 from tensorflow.keras import backend
 from tensorflow.keras import regularizers
 
 # from tensorflow.keras.models import Model
-from tensorflow.python.keras.engine import training
-from tensorflow.keras.utils import data_utils
+from keras.engine import training
+from tensorflow.python.keras.utils import data_utils
 
 from .model import KerasClsBaseModel
 

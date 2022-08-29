@@ -11,12 +11,12 @@ from tensorflow.keras.losses import BinaryCrossentropy
 
 from .model import KerasClsBaseModel
 from tensorflow.keras import backend
-from tensorflow.python.keras.engine import training
+from keras.engine import training
 import h5py
 
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras import layers
-from tensorflow.keras.utils import data_utils
+from tensorflow.python.keras.utils import data_utils
 
 from .resnet_v2_imp import InceptionResNetV2
 from .inception_v3_imp import InceptionV3

@@ -1,6 +1,6 @@
 from tensorflow.keras import models, layers
 from .model import KerasClsBaseModel
-from tensorflow.keras.utils import data_utils
+from tensorflow.python.keras.utils import data_utils
 from tensorflow.keras import regularizers
 
 
