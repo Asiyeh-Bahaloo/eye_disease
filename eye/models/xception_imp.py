@@ -2,9 +2,9 @@ import tensorflow as tf
 
 from tensorflow.keras import backend
 from tensorflow.keras.applications import imagenet_utils
-from tensorflow.python.keras.engine import training
-from tensorflow.keras.layers import VersionAwareLayers
-from tensorflow.keras.utils import data_utils, layer_utils
+from keras.engine import training
+from tensorflow.python.keras.layers import VersionAwareLayers
+from tensorflow.python.keras.utils import data_utils, layer_utils
 from tensorflow.python.util.tf_export import keras_export
 from tensorflow.keras import regularizers
 
