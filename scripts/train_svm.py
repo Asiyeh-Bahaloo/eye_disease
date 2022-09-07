@@ -580,31 +580,6 @@ def main():
         mlflow.log_param("Trainable params Model NOT freezed", trainableParams)
         mlflow.log_param("Non-trainable params Model NOT freezed", nonTrainableParams)
 
-    # Save
-    print("Saving models weights...")
-    CNN_file = os.path.join(args.result, f"model_weights_{tag}.h5")
-    svm_file = os.path.join(args.result, f"SVM_{tag}.pickle.dat")
-    svm.save(path=CNN_file, svm_path=svm_file)
-
-    mlflow.log_artifact(CNN_file)
-    mlflow.log_artifact(svm_file)
-    print(f"Saved model weights in {CNN_file} and SVM model in {svm_file}")
-
-    # Set a batch of tags
-    tags = {"output_path": args.result, "model_name": tag}
-    mlflow.set_tags(tags)
-
-    # Plot
-    if args.epochs > 0:
-        print("plotting...")
-        accuracy_plot_figure = os.path.join(args.result, f"{tag}_accuracy.png")
-        metrics_plot_figure = os.path.join(args.result, f"{tag}_metrics.png")
-        p.plot_accuracy(history=history, path=accuracy_plot_figure)
-        p.plot_metrics(history=history, path=metrics_plot_figure)
-
-        mlflow.log_artifact(accuracy_plot_figure)
-        mlflow.log_artifact(metrics_plot_figure)
-
     print("ordinary:")
     print(training_result)
     for key, val in training_result.items():
@@ -632,6 +607,31 @@ def main():
             mlflow.log_metric("val_" + key, val)
         except:
             mlflow.log_metric("val_" + key, val.numpy())
+
+    # Save
+    print("Saving models weights...")
+    CNN_file = os.path.join(args.result, f"model_weights_{tag}.h5")
+    svm_file = os.path.join(args.result, f"SVM_{tag}.pickle.dat")
+    svm.save(path=CNN_file, svm_path=svm_file)
+
+    mlflow.log_artifact(CNN_file)
+    mlflow.log_artifact(svm_file)
+    print(f"Saved model weights in {CNN_file} and SVM model in {svm_file}")
+
+    # Set a batch of tags
+    tags = {"output_path": args.result, "model_name": tag}
+    mlflow.set_tags(tags)
+
+    # Plot
+    if args.epochs > 0:
+        print("plotting...")
+        accuracy_plot_figure = os.path.join(args.result, f"{tag}_accuracy.png")
+        metrics_plot_figure = os.path.join(args.result, f"{tag}_metrics.png")
+        p.plot_accuracy(history=history, path=accuracy_plot_figure)
+        p.plot_metrics(history=history, path=metrics_plot_figure)
+
+        mlflow.log_artifact(accuracy_plot_figure)
+        mlflow.log_artifact(metrics_plot_figure)
 
     mlflow.end_run()
 

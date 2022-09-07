@@ -30,8 +30,13 @@ class SVM:
         """
 
         self.backbone = backbone
+        self.multi_label = multi_label
         self.num_pop = num_pop
-        self.model_svm = self.build(multiLable_policy=multi_label, C=C, kernel=kernel)
+        self.kernel = kernel
+        self.C = C
+        self.model_svm = self.build(
+            multi_label=self.multi_label, C=self.C, kernel=self.kernel
+        )
 
     def build(self, multi_label, kernel, C):
         """that create sklearn SVM model,that can handle the multilabel data
@@ -54,9 +59,9 @@ class SVM:
         svm_ = svm.SVC(C=C, kernel=kernel, probability=True)
 
         # handel multilable part of model
-        if multi_label == "Chain":
+        if multi_label == "ClassifierChain":
             model_svm = ClassifierChain(svm_, order="random", random_state=0)
-        elif multi_label == "MultiOutput":
+        elif multi_label == "MultiOutputClassifier":
             model_svm = MultiOutputClassifier(svm_)
         return model_svm
 
@@ -126,6 +131,7 @@ class SVM:
         feat_from_cnn = np.concatenate(feat_list, axis=0)
         y_train = np.concatenate(y_list, axis=0)
 
+        print("******", feat_from_cnn.shape)
         for i in tqdm(range(len(validation_data_loader))):
             x, y = validation_data_loader.__iter__()
             feat = model2.predict(x)
@@ -138,8 +144,8 @@ class SVM:
         ## Feed features extracted from backbone to XGBoost classifier
         self.model_svm.fit(feat_from_cnn, y_train)
 
-        pred_train_y = self.model_XGB.predict(feat_from_cnn)
-        pred_val_y = self.model_XGB.predict(feat_val_from_cnn)
+        pred_train_y = self.model_svm.predict(feat_from_cnn)
+        pred_val_y = self.model_svm.predict(feat_val_from_cnn)
 
         training_result = {}
         validation_result = {}
@@ -193,4 +199,4 @@ class SVM:
         """
         self.backbone.save(path, **kwargs)
         # save XGboost model to file
-        pickle.dump(self.model_XGB, open(svm_path, "wb"))
+        pickle.dump(self.model_svm, open(svm_path, "wb"))
