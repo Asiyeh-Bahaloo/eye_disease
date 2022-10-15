@@ -1,16 +1,35 @@
-# AI_Medic
+# Multi-label detection of ophthalmic disorders using InceptionResNetV2 on multiple datasets
+
+This repository contains the implementation of "Multi-label detection of ophthalmic disorders using InceptionResNetV2 on multiple datasets" paper.
 
 ## Abstraction
-<p align="justify"> As retinal pathologies are becoming more and more common globally, rapid and accuract detecting of eye diseases plays a crucial role in preventing from blindness. Therefore deep learning approaches will sharply increase probability of curing such diseases.
+<p align="justify"> Recently, AI-based methods have been extensively
+used to help in the process of diagnosing eye diseases due to their
+prevalence. But since these methods can't be generalized well,
+they can't be used in the real world. In this paper, we compared
+the two fundamental approaches for improving the model's
+performance on the eye disease detection task. The idea is that,
+for real-world applications, using multiple datasets for
+robustness is more beneficial than enhancing the architecture
+just to increase the accuracy. To demonstrate this, we chose three
+state-of-the-art architectures as our baseline and changed them
+slightly so that the overfitting wouldn’t happen. For the first
+approach, we change the classification head to XGB and SVM,
+and for the second approach, we combine the two datasets for the
+training stage. The results show that high-quality data with
+representative distribution can have a better effect than
+sophisticated architecture for real-world applications. This
+approach performed 3% better than the last state-of-the-art
+model.
 
 
 ## Introduction
 According to [World Health Organization](https://www.who.int/news-room/fact-sheets/detail/blindness-and-visual-impairment) at least 2.2 billion people have a near or distance vision impairment. In at least 1 billion – or almost half – of these cases, vision impairment could have been prevented or has yet to be addressed.
 
 This 1 billion people includes those with moderate or severe distance vision impairment or blindness due to unaddressed refractive error (88.4 million), cataract (94 million), glaucoma (7.7 million), corneal opacities (4.2 million), diabetic retinopathy (3.9 million), and trachoma (2 million), as well as near vision impairment caused by unaddressed presbyopia (826 million). Population growth and ageing are expected to increase the risk that more people acquire vision impairment. 
-
-![Image alt text](/img/prev.JPG)
-
+<p align="center">
+   <img src="./img/prev.JPG" width="400"/>
+</p>
 
 In the past few years , deep learning has helped lots of people to live better around the world. In this case we will use deep learning to detect different eye pathologies. Some critical articles in this area were studied.
 Some articles used preprocessing methods to improve the image. Then they trained several models to get features and finaly they predicted the potential disease. Some other articles developed models to detect some lesions such as microaneurysms, hemorrhages, exudates, and cotton-wool spots.
