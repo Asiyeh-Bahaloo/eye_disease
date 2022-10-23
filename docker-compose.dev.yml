@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+    Eye_disease:
+        build: 
+          dockerfile: ./docker/Dockerfile.dev
+          context: ./
+        image: ed-base/py3:latest
+        ports:
+          - "6666:6666"
+          - "8888:8888"
+        volumes:
+          - ./:/usr/src/app
+        environment:
+          - PYTHONPATH=/usr/src/app
+        working_dir: /usr/src/app
+        tty: true 
+        # env_file:
+        #   - ./.env.dev
+        # mem_limit: 2048M
+        
+        # entrypoint: ["bash" , './entrypoint.sh']
+        # restart: unless-stopped

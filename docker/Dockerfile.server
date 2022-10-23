@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM nvidia/cuda:11.4.2-cudnn8-devel-ubuntu20.04
 
 MAINTAINER Asiyeh Bahaloo
 
@@ -31,6 +31,11 @@ RUN apt-get update && \
 WORKDIR /usr/src/app
 
 # install dependencies
-COPY ./requirements.dev.txt .
-RUN pip install --no-cache-dir -r requirements.dev.txt
+COPY ./requirements.server.txt .
+RUN pip install --no-cache-dir -r requirements.server.txt
+RUN apt-get update && \
+    apt install -y git-all && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 CMD ["bash", "-D"]

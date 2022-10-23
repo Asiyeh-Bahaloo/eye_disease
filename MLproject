@@ -1,0 +1,67 @@
+name: EYE-DISEASE
+
+entry_points:
+  VGG19:
+    parameters:
+      data_folder: { type: str, default: "../data" }
+      weights_path: { type: str, default: "../weights/vgg19_weights.h5" }
+      output_folder: { type: str, default: "eye/train/vgg19_train_outputs" }
+      batch_size: { type: int, default: 8 }
+      epoch: { type: int, default: 3 }
+      patience: { type: int, default: 5 }
+      loss: { type: str, default: "binary_crossentropy" }
+      model_name: { type: str, default: "vgg19_model.h5" }
+
+    command: "python vgg19_train_script.py \
+      --data_folder {data_folder} \
+      --weights_path {weights_path} \
+      --output_folder {output_folder} \
+      --batch_size {batch_size} \
+      --epoch {epoch} \
+      --patience {patience} \
+      --loss {loss} \
+      --model_name {model_name}"
+
+  VGG16:
+    parameters:
+      num_batch: { type: int, default: 2 }
+      num_epochs: { type: int, default: 2 }
+      patience: { type: int, default: 5 }
+      loss: { type: str, default: "binary_crossentropy" }
+      weights_path:
+        {
+          type: str,
+          default: "/Data/vgg16_weights_tf_dim_ordering_tf_kernels.h5",
+        }
+      data_folder: { type: str, default: "/Data" }
+      result: { type: str, default: "/Data" }
+
+    command: "python VGG16_main_train.py \
+      --batch {batch} \
+      --epoch {epoch} \
+      --patience {patience} \
+      --loss {loss} \
+      --weights {weights} \
+      --data {data} \
+      --result {result}"
+
+  ResnetV2:
+    parameters:
+      data_path: { type: str, default: "/Dataset" }
+      weight_path: { type: str, default: "/Dataset" }
+      result_path: { type: str, default: "/Dataset" }
+      batch_size: { type: int, default: 4 }
+      epochs: { type: int, default: 2 }
+      patience: { type: int, default: 5 }
+      loss: { type: str, default: "binary_crossentropy" }
+      add_weights: { type: bool, default: True }
+
+    command: "python main_train_resnetV2.py \
+      --data_path {data_path} \
+      --weight_path {weight_path} \
+      --result_path {result_path} \
+      --batch_size {batch_size} \
+      --epochs {epochs} \
+      --patience {patience} \
+      --loss {loss} \
+      --add_weights {add_weights}"
