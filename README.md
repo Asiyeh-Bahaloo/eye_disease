@@ -15,7 +15,7 @@ This repository contains the implementation of [paper](https://ieeexplore.ieee.o
 
 # Description
 Recently, AI-based methods have been extensively used to help in the process of diagnosing eye diseases due to their prevalence.
-The available implementation can diagnose 8 different eye dieses from a medical fundas image of the eye.
+The available implementation can diagnose 8 different eye dieases from a medical fundus image of the eye.
 
 # How to Run?
 Clone the repo:
@@ -26,11 +26,11 @@ Then cd into the repository:
 ```bash
 cd eye_disease
 ```
-This project has a proper docker-compose and docker-file for both development and production purposes. If you are familiar with docker and have docker installed run the command below:
+This project has a proper docker-compose and docker-file for both development and production purposes. If you are familiar with Docker and have it installed, run the command below:
 ```bash
 sudo docker-compose -f docker-compose.dev.yml up
 ```
-If you are more used to python environments then install all the dependencies:
+If you are more used to Python environments, then you can install all the dependencies with:
 ```bash
 pip install -r requirements.dev.txt
 ```
@@ -41,7 +41,7 @@ cd docs/sphinx
 sphinx-build -b html ./source ./build
 ```
 
-Every training and validation experiment has it's own script in the script folder. They work in the same manner, so here is an example to train the model
+Every training and validation experiment has its own script in the script folder. They work in the same manner, so here is an example to train the model:
 ```bash
 python  scripts/train_xception_imp.py \
  --batch_size 32 --epochs 0 --pre_epochs=100 --patience 8 --loss "binary_crossentropy" \
@@ -55,15 +55,15 @@ python  scripts/train_xception_imp.py \
  --Auth_name "Your Name" --desc "experiment_desciption" \
 --dropout_rate 0.25 --weight_decay_rate 0.3
 ```
-This project uses MLflow for keeping the records of experiments. So after training you can call the Mlflow UI to see the important diagrams:
+This project uses MLflow to keep records of experiments. So after training, you can call the Mlflow UI to see the important diagrams:
 
 ```bash
 mlflow ui --backend-store-uri path_to_mlflow_folder
 ```
 # Method
-The proposed architecture has shown in the image below:
+The proposed architecture is shown in the image below:
 ![classification arch](./img/architecture.png)
-We trained and compared 5 different base model for this experiment:
+We trained and compared five different base models for this experiment:
 1. VGG16
 2. VGG19
 3. Resnet_V2
@@ -72,21 +72,21 @@ We trained and compared 5 different base model for this experiment:
 Please read the paper for more information about the methodology.
 ## Datasets
 We have used and combined two datasets to train our models:
-1. ODIR_2019 dataset [(downlaod)](https://odir2019.grand-challenge.org/dataset/):  
-   This dataset is real-life set of patient information collected by Shanggong Medical Technology Co., Ltd. from different hospitals/medical centers in China. In these institutions, fundus images are captured by various cameras in the market, such as Canon, Zeiss and Kowa, resulting into varied image resolutions. 
+1. ODIR_2019 dataset [(download)](https://odir2019.grand-challenge.org/dataset/):  
+   This dataset is a real-life set of patient information collected by Shanggong Medical Technology Co., Ltd. from different hospitals and medical centers in China. In these institutions, fundus images are captured by various cameras on the market, such as Canon, Zeiss, and Kowa, resulting in varied image resolutions. 
 
-2. Cataract dataset [(downlaod)](https://www.kaggle.com/jr2ngb/cataractdataset): 
-     Cataract and normal eye image dataset for cataract detection.
+2. Cataract dataset [(download)](https://www.kaggle.com/jr2ngb/cataractdataset): 
+     Cataract and normal eye images dataset for cataract detection.
 
 After exploring datasets, we used some preprocessing techniques to improve images: 
-1. Resize images : We resized images to 224*224 pixels
-2. Remove padding : We removed the padding around the fundas image and cropped uninformative area to detect lesions better.
-3. Ben_Graham Method : Ben Graham (Kaggle competition's winner) share insightful way to improve lighting condition. Here, we applied his idea, and we could see many important details in the eyes much better. 
+1. Resize images: We resized images to 224*224 pixels.
+2. Remove padding: We removed the padding around the fundus image and cropped the uninformative area to better detect lesions.
+3. Ben Graham Method: Ben Graham (the Kaggle competition's winner) shares insightful ways to improve lighting conditions. Here, we applied his idea, and we could see many important details in the eyes much better. 
 
 # Result
 
-The Resnet_V2 model traiend with XGboost head has performed the best among other model with validation final score of 0.677%. 
-Here is the evaluation result with 5896 training images and 655 validation images. For more details about configuration details please refer to the paper.
+The Resnet_V2 model with XGboost head has performed the best among other models, with a validation final score of 0.677%.
+Here is the evaluation result with 5896 training images and 655 validation images. For more details about configuration details, please refer to the paper.
 
    Training: 
 
