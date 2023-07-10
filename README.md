@@ -1,41 +1,77 @@
+![Keras](https://img.shields.io/badge/Keras-%23D00000.svg?style=for-the-badge&logo=Keras&logoColor=white)
+![mlflow](https://img.shields.io/badge/mlflow-%23d9ead3.svg?style=for-the-badge&logo=numpy&logoColor=blue)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-%23FF6F00.svg?style=for-the-badge&logo=TensorFlow&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/Asiyeh-Bahaloo/eye_disease/graphs/commit-activity)
 # Multi-label detection of ophthalmic disorders using InceptionResNetV2 on multiple datasets
 
-This repository contains the implementation of "Multi-label detection of ophthalmic disorders using InceptionResNetV2 on multiple datasets" paper.
+This repository contains the implementation of [paper](https://ieeexplore.ieee.org/document/10043998s) "Multi-label detection of ophthalmic disorders using InceptionResNetV2 on multiple datasets".
 
-## Abstraction
-<p align="justify"> Recently, AI-based methods have been extensively
-used to help in the process of diagnosing eye diseases due to their
-prevalence. But since these methods can't be generalized well,
-they can't be used in the real world. In this paper, we compared
-the two fundamental approaches for improving the model's
-performance on the eye disease detection task. The idea is that,
-for real-world applications, using multiple datasets for
-robustness is more beneficial than enhancing the architecture
-just to increase the accuracy. To demonstrate this, we chose three
-state-of-the-art architectures as our baseline and changed them
-slightly so that the overfitting wouldn’t happen. For the first
-approach, we change the classification head to XGB and SVM,
-and for the second approach, we combine the two datasets for the
-training stage. The results show that high-quality data with
-representative distribution can have a better effect than
-sophisticated architecture for real-world applications. This
-approach performed 3% better than the last state-of-the-art
-model.
+# Table of Contents  
+1. [Description](#description)  
+2. [How to Run?](#how-to-run)  
+3. [Method](#method) 
+4. [Result](#result)
 
+# Description
+Recently, AI-based methods have been extensively used to help in the process of diagnosing eye diseases due to their prevalence.
+The available implementation can diagnose 8 different eye dieses from a medical fundas image of the eye.
 
-## Introduction
-According to [World Health Organization](https://www.who.int/news-room/fact-sheets/detail/blindness-and-visual-impairment) at least 2.2 billion people have a near or distance vision impairment. In at least 1 billion – or almost half – of these cases, vision impairment could have been prevented or has yet to be addressed.
+# How to Run?
+Clone the repo:
+```bash
+git clone https://github.com/Asiyeh-Bahaloo/eye_disease.git
+```
+Then cd into the repository:
+```bash
+cd eye_disease
+```
+This project has a proper docker-compose and docker-file for both development and production purposes. If you are familiar with docker and have docker installed run the command below:
+```bash
+sudo docker-compose -f docker-compose.dev.yml up
+```
+If you are more used to python environments then install all the dependencies:
+```bash
+pip install -r requirements.dev.txt
+```
+Now, you can generate a detailed document about the implementation with:
+```bash
+cd docs/sphinx
 
-This 1 billion people includes those with moderate or severe distance vision impairment or blindness due to unaddressed refractive error (88.4 million), cataract (94 million), glaucoma (7.7 million), corneal opacities (4.2 million), diabetic retinopathy (3.9 million), and trachoma (2 million), as well as near vision impairment caused by unaddressed presbyopia (826 million). Population growth and ageing are expected to increase the risk that more people acquire vision impairment. 
-<p align="center">
-   <img src="./img/prev.JPG" width="400"/>
-</p>
+sphinx-build -b html ./source ./build
+```
 
-In the past few years , deep learning has helped lots of people to live better around the world. In this case we will use deep learning to detect different eye pathologies. Some critical articles in this area were studied.
-Some articles used preprocessing methods to improve the image. Then they trained several models to get features and finaly they predicted the potential disease. Some other articles developed models to detect some lesions such as microaneurysms, hemorrhages, exudates, and cotton-wool spots.
+Every training and validation experiment has it's own script in the script folder. They work in the same manner, so here is an example to train the model
+```bash
+python  scripts/train_xception_imp.py \
+ --batch_size 32 --epochs 0 --pre_epochs=100 --patience 8 --loss "binary_crossentropy" \
+ --imgnetweights "True"  --data_train "/data/ODIR-5K_Training_Dataset"   --data_val "path_to_ODIR-5K_VAL_Dataset" \
+ --train_label "path_to_odir_train.csv" --val_label "path_to_odir_val.csv" \
+ --result "path_to_save_results" --learning_rate 0.05 \
+ --LR_type "other" --LR_decay_rate 0.95 --LR_decay_step 50 \
+ --decay_rate 1e-6 --momentum_rate 0.9 --nesterov_flag "True" \
+ --exp "exp name" --bg_scale 350 --shape 224 --keep_AR "False" \
+ --data_frac 1 --ES_mode "min" --ES_monitor "val_loss" --ES_verbose 1  \
+ --Auth_name "Your Name" --desc "experiment_desciption" \
+--dropout_rate 0.25 --weight_decay_rate 0.3
+```
+This project uses MLflow for keeping the records of experiments. So after training you can call the Mlflow UI to see the important diagrams:
 
+```bash
+mlflow ui --backend-store-uri path_to_mlflow_folder
+```
+# Method
+The proposed architecture has shown in the image below:
+![classification arch](./img/architecture.png)
+We trained and compared 5 different base model for this experiment:
+1. VGG16
+2. VGG19
+3. Resnet_V2
+4. Inception_V3
+5. Xception
+Please read the paper for more information about the methodology.
 ## Datasets
-We have used two datasets to train our models:
+We have used and combined two datasets to train our models:
 1. ODIR_2019 dataset [(downlaod)](https://odir2019.grand-challenge.org/dataset/):  
    This dataset is real-life set of patient information collected by Shanggong Medical Technology Co., Ltd. from different hospitals/medical centers in China. In these institutions, fundus images are captured by various cameras in the market, such as Canon, Zeiss and Kowa, resulting into varied image resolutions. 
 
@@ -46,57 +82,11 @@ After exploring datasets, we used some preprocessing techniques to improve image
 1. Resize images : We resized images to 224*224 pixels
 2. Remove padding : We removed the padding around the fundas image and cropped uninformative area to detect lesions better.
 3. Ben_Graham Method : Ben Graham (Kaggle competition's winner) share insightful way to improve lighting condition. Here, we applied his idea, and we could see many important details in the eyes much better. 
-## Methodology
-Firstly we explored datasets. 
-Then we preprocessed datasets with methods mentioned in Dataset section.
-Next we trained five different deep learning models to classify images into 8 groups to extract relevant image features and automatic detection of eye diseases in fundas photographs. Our models: 
-1. VGG16
-2. VGG19
-3. Resnet_V2
-4. Inception_V3
-5. Xception
 
-Finally, different results from the experiments were generated and compared using MLflow.
+# Result
 
-## Results
-In this section we will show and compare the results of our models.
-* VGG16
-   We runned VGG16 model for 50 epochs with a batch size of four. Training data had 5896 images and validation data included 655 validation images. Also there was 1000 images for testing VGG16 model.
-   Here are the results on test data: 
-   Training:
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8939   | 0.9061 | 0.2444 | 0.6380    | 0.4716 |
- 
-   Validation:
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8326   | 0.7990 | 0.3813 | 0.3757    | 0.2374 |
-
-
-* VGG19
-   We runned VGG19 model for 50 epochs with a batch size of four. Training data had 5896 images and validation data included 655 validation images. Also there was 1000 images for testing VGG19 model.
-   Here are the results on test data: 
-   Training:
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8910   | 0.9046 | 0.2492 | 0.6201    | 0.4692 |
-
-
-   Validation:
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8498   | 0.7942 | 0.4214 | 0.4527    | 0.1833 |
-
-
-* Resnet_V2
-
-   We runned Resnet_V2 model for 100 epochs with a batch size of four. Training data had 5896 images and validation data included 655 validation images. Also there was 1000 images for testing Resnet_V2 model.
-   Here are the results on test data:  
+The Resnet_V2 model traiend with XGboost head has performed the best among other model with validation final score of 0.677%. 
+Here is the evaluation result with 5896 training images and 655 validation images. For more details about configuration details please refer to the paper.
 
    Training: 
 
@@ -110,72 +100,3 @@ In this section we will show and compare the results of our models.
 | -------- | ------ | ------ | --------- | ------ |
 | 0.8403   | 0.7779 | 0.5965 | 0.3778    | 0.3559 |
 
-
-* Inception_V3
-
-   We runned Inception_V3 model for 100 epochs with a batch size of four. Training data had 5896 images and validation data included 655 validation images. Also there was 1000 images for testing Inception_V3 model.
-   Here are the results on test data:  
-
-   Training: 
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8660   | 0.7993 | 0.3166 | 0.4628    | 0.0337 |
-
-   Validation:
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8553   | 0.5603 | 16.198 | 0         | 0      |
-
-
-* Xception
-   We runned Xception model for 100 epochs with a batch size of four. Training data had 5896 images and validation data included 655 validation images. Also there was 1000 images for testing Xception model.
-   Here are the results on test data:  
-
-   Training:
-    
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.9320   | 0.9566 | 0.1691 | 0.8190    | 0.6289 |
-
-   Validation:
-
-| accuracy | auc    | loss   | precision | recall |
-| -------- | ------ | ------ | --------- | ------ |
-| 0.8660   | 0.8435 | 0.3380 | 0.5469    | 0.3535 |
-
-
-* All in One
-  
-  **Training**:
-
-
-  **auc plot:** 
-  ![Image alt text](/img/t_auc.JPG)
-
-
-  **precision plot:**  
-  ![Image alt text](/img/t_precision.JPG)
-
-
-  **recall plot:** 
-  ![Image alt text](/img/t_recall.JPG)
-
-
-   **Validation**:
-
-     **auc plot:** 
-  ![Image alt text](/img/v_auc.JPG)
-
-
-  **precision plot:**  
-  ![Image alt text](/img/v_precision.JPG)
-
-
-  **recall plot:** 
-  ![Image alt text](/img/v_recall.JPG)
-## Conclusion
-
-* This project studied five deep learning models for the multiple classification of diseases.
-* We faced several challenges due to the initial data imbalance.
