@@ -20,7 +20,7 @@ tqdm
 sphinx-rtd-theme
 torch
 torchvision
-pillow==8.2.0
+pillow
 xgboost
 jupyter
 
